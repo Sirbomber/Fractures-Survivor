@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# MSVS Stuff
+*.suo
+*.user
+.vs
+Debug
+Release
+*.ncb

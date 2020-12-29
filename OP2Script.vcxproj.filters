@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0fe9b4de-2844-420c-b8be-e881efd0f55f}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{1333d31b-99d0-4472-b819-6e2cbe84cda2}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Header Files\OP2Types">
+      <UniqueIdentifier>{58202d75-a9ed-41ba-891f-590dd6bd4020}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Outpost2App">
+      <UniqueIdentifier>{0659bd8d-7999-46ec-95cf-3f2d130faead}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AI">
+      <UniqueIdentifier>{c2fc0258-fece-4e1a-9edd-8bbfba5e40cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Player Events %28No Agridomes, Etc.%29">
+      <UniqueIdentifier>{2381fb01-6a3b-42da-a6f2-6a5f6a974797}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Patches">
+      <UniqueIdentifier>{65f350ba-02ac-4b61-b7be-33e2b82a6843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="odprintf">
+      <UniqueIdentifier>{cd3cd2a8-55fe-4610-aae5-d6c0ff018aef}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FxSurvMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvSetup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="odprintf.cpp">
+      <Filter>odprintf</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_Utils.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_EdenOutpost.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_MainBase.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_PlymOutpost.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_AttackWaves.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\FraxSurvAi_Research.cpp">
+      <Filter>AI</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerEvents\PlayerEvents.cpp">
+      <Filter>Player Events %28No Agridomes, Etc.%29</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\BlightHook.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\Cutscene.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\DIRTRepair.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\DualTurretUnit.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\ExtLocation.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\HookHelper.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\MessageHook.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\MiscPatches.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\Patcher.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\RandomResources.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\UnitHookHelper.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2BlightLavaMgr.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Game.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Graphics.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Map.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Pathfinder.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Player.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Player_WIP.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Research.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2ScStub.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Types.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OP2Types\OP2Units.h">
+      <Filter>Header Files\OP2Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\CConfig.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\Filters.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\IWnd.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\ResManager.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\TApp.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\TFrame.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="Outpost2App\UIState.h">
+      <Filter>Header Files\Outpost2App</Filter>
+    </ClInclude>
+    <ClInclude Include="odprintf.h">
+      <Filter>odprintf</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\FraxSurvAi.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\FraxSurvWaypoints.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerEvents\PlayerEvents.h">
+      <Filter>Player Events %28No Agridomes, Etc.%29</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\BlightHook.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\Cutscene.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\DIRTRepair.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\DualTurretUnit.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\ExtLocation.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\HookHelper.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\MessageHook.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\MiscPatches.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\Patcher.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\RandomResources.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\UnitHookHelper.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
