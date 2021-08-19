@@ -1,449 +1,298 @@
-#include <windows.h>
-#include <winuser.h>
-#include <Outpost2DLL.h>
-#include <OP2Helper.h>
-#include <hfl.h>
-#include <OP2App\CConfig.h>
-#include <OP2Types.h>
-#include "HookHelper.h"
-#include "UnitHookHelper.h"
-#include "ExtLocation.h"
+
+#include "Tethys/API/Unit.h"
+#include "Tethys/API/GameMap.h"
+#include "Tethys/API/TethysGame.h"
+#include "Tethys/Resource/CConfig.h"
+
 #include "Cutscene.h"
-#include "MiscPatches.h"
 
-//char **stringTable = (char**)OP2Addr(0x4E88F8);
-//stringTable[id] = "my string here";
+#include <utility>
+#include <cstring>
 
-namespace
+#include "Patcher.h"
+#include "Util.h"
+
+using namespace Tethys;
+using namespace TethysAPI;
+using namespace Patcher;
+
+template <size_t... Is>  auto& GetMapObjVtbls(std::index_sequence<Is...>)
+  { static MapObject::VtblType*const Vtbls[] = { MapObjFor<MapID(Is)>::Vtbl()... };  return Vtbls; }
+auto& GetMapObjVtbls() { return GetMapObjVtbls(std::make_index_sequence<MapID::MaxObject>{}); }
+
+// =====================================================================================================================
+bool SetSuperSpeedPatch(
+  bool enable)
 {
-	struct StructureFuncs
-	{
-		static int __thiscall AdvancedLab_GetRolloverText(OP2Unit *classPtr, char *destBuffer, int bufferSize);
-		static bool __thiscall CheckSpontaneouslyExplode(OP2Unit *classPtr);
-		static void __thiscall DoDockDamage(OP2Unit *classPtr);
-	};
+  static PatchContext patcher;
+  bool success = true;
+
+  if (enable && (patcher.NumPatches() == 0)) {
+    patcher.Write(&g_gameFrame.iniSettings_.frameSkip, 2);
+    success = (patcher.Write<uint8>(0x49C374, 0xEB) == Status::Ok); // 0x73
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
+
+  return success;
 }
 
-
-// ConVec hover text hack
-namespace {
-	struct ConVecFuncs {
-		static int __thiscall GetRolloverText(OP2Unit *classPtr, char *destBuffer, int bufferSize);
-	};
-}
-
-int __thiscall ConVecFuncs::GetRolloverText(OP2Unit *classPtr, char *destBuffer, int bufferSize) {
-	if (classPtr->ownerNum == TethysGame::LocalPlayer() && classPtr->cargoOrWeapon)
-	{
-		return scr_snprintf(destBuffer, bufferSize, "%s (%s)",
-							unitInfoArray[classPtr->vtbl->GetUnitTypeInfo(classPtr)->unitType]->unitName,
-							unitInfoArray[classPtr->cargoOrWeapon]->unitName);
-	}
-	else
-	{
-		return oldUnitVtbl[classPtr->vtbl->GetUnitTypeInfo(classPtr)->unitType].GetRolloverText(classPtr, destBuffer, bufferSize);
-	}
-}
-
-
-bool SetStructurePatches()
+// =====================================================================================================================
+bool SetStructureDamagePatches(
+  bool enable)
 {
-	static bool structurePatches = false;
+  static PatchContext patcher;
+  bool success = true;
 
-	if (structurePatches)
-		return true;
+  if (enable && (patcher.NumPatches() == 0)) {
+    for (int type = MapID::CommonOreMine; type <= MapID::Tokamak; ++type) {
+      auto*const pVtbl = GetMapObjVtbls()[type];
+      if (type == MapID::GuardPost) {
+        patcher.Write(
+          &pVtbl->pfnCheckSpontaneouslyExplode,
+          ThiscallLambdaPtr([](Building* pThis) {
+            return ((pThis->flags_ & MoFlagBldNoExplosionOnDeath) ||
+              (pThis->damage_ < ((pThis->GetType()->playerStats_[pThis->creatorNum_].hp*2)/3))) ?
+              false : Building::Vtbl()->pfnCheckSpontaneouslyExplode(pThis);
+          }));
+      }
+      else if (reinterpret_cast<const void*>(pVtbl->pfnCheckSpontaneouslyExplode) == Op2Mem(0x409400)) {
+        patcher.Write(
+          &pVtbl->pfnCheckSpontaneouslyExplode,
+          ThiscallLambdaPtr([](Building* pThis) {
+            return ((pThis->flags_ & MoFlagBldNoExplosionOnDeath) == 0) &&
+                   Building::Vtbl()->pfnCheckSpontaneouslyExplode(pThis);
+          }));
+      }
 
-	InitUnitVtblAddresses();
+#if 0
+      // This is in 1.4.0
+      if (reinterpret_cast<const void*>(pVtbl->pfnDoEvent) == Op2Mem(0x482D90)) {
+        patcher.Write(&pVtbl->pfnDoEvent, ThiscallLambdaPtr([](Building* pThis) {
+          Location dockLocation;
 
-	OP2PatchManager::PatchReferencedVirtualFunction(unitVtbl[mapConVec]->GetRolloverText, ConVecFuncs::GetRolloverText, false);
+          // ** TODO Investigate possible crashes related to this?
+          if ((pThis != nullptr) && (pThis->GetDockLocation(&dockLocation) != 0)) {
+            Unit unitOnDock = GameMap::GetUnitOnTile(dockLocation);
 
-	for (int i = mapCommonOreMine; i <= mapTokamak; i ++)
-	{
-		if (i == mapAdvancedLab)
-		{
-			OP2PatchManager::PatchReferencedVirtualFunction(unitVtbl[i]->GetRolloverText, StructureFuncs::AdvancedLab_GetRolloverText, false);
-		}
+            if (unitOnDock.IsVehicle() && (Player[pThis->ownerNum_].IsAlliedTo(unitOnDock.GetOwner()) == false)) {
+              Building::Vtbl()->pfnDoEvent(pThis);
+            }
+          }
+        }));
+      }
+#endif
+    }
 
-		if ((DWORD)unitVtbl[i]->CheckSpontaneouslyExplode == OP2Addr(0x409400))
-		{
-			OP2PatchManager::PatchReferencedVirtualFunction(unitVtbl[i]->CheckSpontaneouslyExplode, StructureFuncs::CheckSpontaneouslyExplode, false);
-		}
+    // Prevent Guard Posts from being disabled due to damage.
+    patcher.LowLevelHook(0x483732, [](Eax<MapObjectType*> pMoType)
+      { return (pMoType->type_ == MapID::GuardPost) ? 0x483744: 0; });
 
-		if ((DWORD)unitVtbl[i]->DoEvent == OP2Addr(0x482D90))
-		{
-			OP2PatchManager::PatchReferencedVirtualFunction(unitVtbl[i]->DoEvent, StructureFuncs::DoDockDamage, false);
-		}
-	}
+    // Hide Gaia-owned structure status icons.
+    // ** TODO is there a better place for this?
+    patcher.LowLevelHook(0x4091E8, [](Edx<MapObject*> pThis) { return (pThis->ownerNum_ == 6) ? 0x4092E8 : 0; });
 
-	// Hide gaia structure status icons (they are normally visible until/unless Gaia unallies with the local player)
-	OP2PatchManager::PatchFunction((void*)0x4091E8, &Unit_DrawUnit_StatusLight_Trampoline, false);
+    // Always show Command Center idle button.
+    // ** TODO is there a better place for this?
+    patcher.Write<uint8>(0x455D7D, 0x00);
 
-	structurePatches = true;
-	return true;
+    success = (patcher.GetStatus() == Status::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
+
+  return success;
 }
 
-
-int __thiscall StructureFuncs::AdvancedLab_GetRolloverText(OP2Unit *classPtr, char *destBuffer, int bufferSize)
+// =====================================================================================================================
+bool SetAdvancedLabMouseoverPatch(
+  bool enable)
 {
-	if (classPtr->ownerNum == 6)
-	{
-		memset(destBuffer, 0, bufferSize);
-		return scr_snprintf(destBuffer, bufferSize, "TEH MES HAL");
-	}
-	else
-		return oldUnitVtbl[classPtr->vtbl->GetUnitTypeInfo(classPtr)->unitType].GetRolloverText(classPtr, destBuffer, bufferSize);
+  static PatchContext patcher;
+  bool success = true;
+
+  if (enable) {
+    static auto*const pfnOldGetRolloverText = MapObj::AdvancedLab::Vtbl()->pfnGetMouseOverStr;
+    patcher.Write(
+      &MapObj::AdvancedLab::Vtbl()->pfnGetMouseOverStr, ThiscallLambdaPtr([](MapObject* pThis, char* pDst, int size) {
+        return (pThis->ownerNum_ == 6) ? snprintf(pDst, size, "TAC Hot Lab") : pfnOldGetRolloverText(pThis, pDst, size);
+      }));
+
+    success = (patcher.GetStatus() == Status::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
+
+  return success;
 }
 
-
-bool __thiscall StructureFuncs::CheckSpontaneouslyExplode(OP2Unit *classPtr)
+// =====================================================================================================================
+bool SetStarshipCostPatch(
+  int numColonistsRequired,
+  int numFoodRequired)
 {
-	if (classPtr->flags & UNIT_PREVENTEXPLOSIONONDEATH)
-		return false;
+  static PatchContext patcher;
+  const bool enable = (numColonistsRequired >= 0) && (numFoodRequired >= 0);
+  bool success      = true;
 
-	return oldUnitVtbl[classPtr->vtbl->GetUnitTypeInfo(classPtr)->unitType].CheckSpontaneouslyExplode(classPtr);
+  if (enable) {
+    if (auto value = static_cast<uint16>(numColonistsRequired);  value > 0) {
+      // In Player.ProcessCommandPacket(), UICommand::MouseCommand::Launch.IsEnabled(), Unit.Launch()
+      for (uintptr loc : { 0x40F7EA, 0x4574CB, 0x47FF8D }) {
+        patcher.Write(loc, value);
+      }
+    }
+
+    if (numFoodRequired > 0) {
+      // Food module cost
+      // In Player::ProcessCommandPacket() (x2), BuildListReport::CanBuildItem(), BuildListReport::GetStatusString()
+      for (uintptr loc : { 0x40EA34, 0x40EA3C, 0x4686B4, 0x4688D4 }) {
+        patcher.Write<Patcher::uint32>(loc, numFoodRequired);
+      }
+    }
+
+    success = (patcher.GetStatus() == Status::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
+
+  return success;
 }
 
-
-void __thiscall StructureFuncs::DoDockDamage(OP2Unit *classPtr)
+// =====================================================================================================================
+bool SetMissionEndHook(
+  bool            enable,
+  void (__cdecl*  pfnHook)())
 {
-	int (__thiscall *Unit_GetDockLocation)(OP2Unit *classPtr, LOCATION *returnedLocation) = (int (__thiscall*)(OP2Unit*,LOCATION*))OP2Addr(0x482F40);
+  static PatchContext patcher;
+  bool success = true;
 
-	LOCATION dockLocation;
-	UnitEx unitOnDock;
+  if (enable && (patcher.NumPatches() == 0)) {
+    // Disable automatic victory on being the last remaining player in MP
+    patcher.Write<uint8>(0x4033A9, 0x00);
 
-	if (Unit_GetDockLocation(classPtr, &dockLocation) == 0)
-		return; // Couldn't find dock location
+    if (pfnHook != nullptr) {
+      // Insert the user-specified hook during mission end, primarily intended for playing a cutscene.
+      patcher.LowLevelHook(0x49CB44, pfnHook);
+    }
 
-	unitOnDock.unitID = GameMapEx::GetTileEx(dockLocation).unitIndex;
-	if (unitOnDock.unitID == 0 || !unitOnDock.IsLive())
-		return;
+    success = (patcher.GetStatus() == Status::Ok);
+  }
 
-	if (ExtPlayer[classPtr->ownerNum].IsAlliedTo(unitOnDock.OwnerID()))
-		return;
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
 
-	return oldUnitVtbl[classPtr->vtbl->GetUnitTypeInfo(classPtr)->unitType].DoEvent(classPtr);
+  return success;
 }
 
-
-bool SetWallPatch()
+// =====================================================================================================================
+bool SetMissionEndHook(
+  bool         enable,
+  const char*  pWinCutscene,
+  const char*  pLoseCutscene)
 {
-	static bool wallPatch = false;
+  void (__cdecl*  pfnHook)() = nullptr;
 
-	if (wallPatch)
-		return true;
+  enable &= (pWinCutscene != nullptr) && (pLoseCutscene != nullptr);
+  if (enable) {
+    static char pWinCutscenePath[MAX_PATH]  = "";
+    static char pLoseCutscenePath[MAX_PATH] = "";
 
-	// Fix the "cannot build walls in a 3x3 area around another wall being built" bug
-	OP2PatchManager::Patch<unsigned short>((void*)0x438E07, 0x9090, false);
-	// Make earthworkers invincible to stop the invisible perma-wall bug
-	OP2PatchManager::PatchFunction((void*)0x43BD79, &Unit_MoBuildWall_Trampoline, false);
-	OP2PatchManager::PatchFunction((void*)0x43BE1C, &Unit_MoBuildWallDone_Trampoline, false); // One item completed, still others in queue
-	OP2PatchManager::PatchFunction((void*)0x43BE5E, &Unit_MoBuildWallDoneAll_Trampoline, false); // All items completed
+    strncpy_s(&pWinCutscenePath[0],  sizeof(pWinCutscenePath),  pWinCutscene,  _TRUNCATE);
+    strncpy_s(&pLoseCutscenePath[0], sizeof(pLoseCutscenePath), pLoseCutscene, _TRUNCATE);
 
-	wallPatch = true;
-	return true;
+    pfnHook = [] {
+      if (g_configFile.GetInt("Game", "ShowMovies", 1) != 0) {
+        switch (g_gameImpl.gameTermReasons_) {
+        case GameTermReasons::MissionAccomplished:
+          g_gameImpl.gameTermReasons_ = GameTermReasons::AutoDemo;  // Prevent the game from playing another cutscene
+        case GameTermReasons::Victory:
+          PlayAvi(pWinCutscenePath);
+          break;
+
+        case GameTermReasons::MissionFailed:
+          g_gameImpl.gameTermReasons_ = GameTermReasons::AutoDemo;  // Prevent the game from playing another cutscene
+        case GameTermReasons::Defeat:
+          PlayAvi(pLoseCutscenePath);
+          break;
+
+        default:
+          break;
+        }
+      }
+    };
+  }
+
+  return SetMissionEndHook(enable, pfnHook);
 }
 
-bool SetMeteorDefensePatch()
+// =====================================================================================================================
+// Silences disaster caution/alert/warning messages.
+bool SetInstantDisasterNoWarnPatch(
+  bool enable)
 {
-	static bool mdPatch = false;
+  static PatchContext patcher;
+  bool success = true;
 
-	if (mdPatch)
-		return true;
+  if (enable && (patcher.NumPatches() == 0)) {
+    Disaster::VtblType*const pVtbls[] = {
+      MapObj::Lightning::Vtbl(), MapObj::Vortex::Vtbl(), MapObj::Earthquake::Vtbl(), MapObj::Eruption::Vtbl(),
+      MapObj::Meteor::Vtbl()
+    };
+    for (auto* pVtbl : pVtbls) {
+      patcher.Write(
+        &pVtbl->pfnWarn,
+        ThiscallLambdaPtr([](Disaster* pThis, int warn1StrIdx, int warn1SoundId, int warn2StrIdx, int warn2SoundId) {
+          pThis->flags_ |= MoFlagEntDisasterDidFirstWarn | MoFlagEntDisasterDidSecondWarn;
+          return ((TethysGame::GetRand(100 + 1) >= 90) || (pThis->flags_ & MoFlagEntDisasterStarted)) ? 1 : 0;
+        }));
+    }
 
-	OP2PatchManager::Patch<unsigned char>((void*)OP2Addr(0x4803C0), 0x64, false);
+    // Lightning, vortex, earthquake, eruption, meteor, missile launch, incoming missile
+    for (const uintptr_t loc : { 0x433107, 0x48F6B3, 0x41397B, 0x4A82FF, 0x44A3E3, 0x43B2B0, 0x480514 }) {
+      patcher.HookCall(
+        loc,
+        ThiscallLambdaPtr([](void* pThis, int pixelX, int pixelY, const char* pText, int soundIndex) { return 1; }));
+    }
 
-	mdPatch = true;
-	return true;
+    success = (patcher.GetStatus() == Status::Ok);
+  }
+
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
+
+  return success;
 }
 
-bool SetPalettePatch()
+// =====================================================================================================================
+// Forces world map X-axis wraparound on any map.  Because the mission DLL is loaded after the map, you will need to
+// call MapImpl::LoadMap() in InitProc() to reload the map, which must be done before any units are created.
+// ** TODO Fix minimap issues with 128xY, possibly fix major rendering/crash issues with 64xY
+bool SetForcedWorldMapPatch(
+  bool enable)
 {
-	static bool palettePatch = false;
+  static PatchContext patcher;
+  bool success = true;
 
-	// todo: COPER <-> TITAENUM patch
-	palettePatch = true;
-	return true;
-}
+  if (enable) {
+    // In Map::AllocateSpaceForMap(), force world map loading path
+    patcher.LowLevelHook(0x435532, [] { return 0x435550; });
+    success = (patcher.GetStatus() == Status::Ok);
+  }
 
+  if ((enable == false) || (success == false)) {
+    success &= ((patcher.RevertAll() == Status::Ok));
+  }
 
-bool SetMissionEndHook()
-{
-	static bool missionEndHook = false;
-
-	if (missionEndHook)
-		return true;
-
-	OP2PatchManager::Patch<unsigned char>((void*)0x4033A9, 0x00, false);
-	OP2PatchManager::PatchFunction((void*)0x49CB44, &MissionEndTrampoline, false);
-
-	missionEndHook = true;
-	return true;
-}
-
-
-bool SetEvacuationModulePatch()
-{
-	static bool evacuationModulePatch = false;
-
-	if (evacuationModulePatch)
-		return true;
-
-	OP2PatchManager::Patch<unsigned short>((void*)0x40F7EA, 0x0190, false); // in Player.ProcessCommandPacket; check if you have 200 colonists before proceeding (validity check)
-	OP2PatchManager::Patch<unsigned short>((void*)0x4574CB, 0x0190, false); // in UICommand::MouseCommand::Launch.IsEnabled; check if you have 200 colonists, if so, enable launch button
-	OP2PatchManager::Patch<unsigned short>((void*)0x47FF8D, 0x0190, false); // in Unit.Launch; number of colonists to remove
-
-	evacuationModulePatch = true;
-	return true;
-}
-
-
-bool SetAllyMessagePatch()
-{
-	static bool allyMessagePatch = false;
-
-	if (allyMessagePatch)
-		return true;
-
-	// Skip "player X has allied with you/broken the alliance" if X >= 6 (Gaia), or if tick == 0
-	OP2PatchManager::PatchFunction((void*)0x40FFC5, &AllianceFormedBrokenFromMessage_Trampoline, false);
-	// Skip "alliance formed with player X/broken with player X" if X >= 6 (Gaia), or if tick == 0
-	OP2PatchManager::PatchFunction((void*)0x410051, &AllianceFormedBrokenWithMessage_Trampoline, false);
-
-	allyMessagePatch = true;
-	return true;
-}
-
-
-bool SetFoodStoresArePlentifulPatch()
-{
-	static bool foodStoresArePlentifulPatch = false;
-
-	if (foodStoresArePlentifulPatch == true)
-		return true;
-
-	OP2PatchManager::Patch<unsigned char>((void*)0x4721D4, 0xEB, 0x7F, false);
-
-	foodStoresArePlentifulPatch = true;
-	return true;
-}
-
-
-void __declspec(naked) Unit_DrawUnit_StatusLight_Trampoline()
-{
-	static OP2Unit *classPtr;
-	__asm
-	{
-		mov classPtr, edx
-
-		pushad
-	}
-	static int localPlayerNum;
-	static DWORD jumpToAddr;
-
-	if (classPtr->ownerNum == 6)
-		jumpToAddr = OP2Addr(0x4092E8);
-	else
-		jumpToAddr = OP2Addr(0x4091ED);
-
-	localPlayerNum = ((OP2Game*)gameObj)->localPlayer;
-	__asm
-	{
-		popad
-
-		// Reissue overwritten instructions
-		mov eax, localPlayerNum
-		// Jump back to original function
-		jmp jumpToAddr
-	}
-}
-
-
-void __declspec(naked) Unit_MoBuildWall_Trampoline()
-{
-	static OP2Unit *thisUnit;
-	__asm
-	{
-		mov thisUnit, esi
-
-		pushad
-	}
-	if (thisUnit->tubeOrWallType != mapTube)
-		thisUnit->flags &= ~UNIT_CANBEDAMAGED;
-
-	static int fastProduction;
-	fastProduction = ((OP2Game*)gameObj)->fastProduction;
-
-	static DWORD jumpToAddr;
-	jumpToAddr = OP2Addr(0x43BD7E);
-	__asm
-	{
-		popad
-
-		// Reissue overwritten instructions
-		mov eax, fastProduction
-		// Jump back to original function
-		jmp jumpToAddr
-	}
-}
-
-
-void __declspec(naked) Unit_MoBuildWallDone_Trampoline()
-{
-	static OP2Unit *thisUnit;
-	__asm
-	{
-		mov thisUnit, esi
-
-		pushad
-	}
-	if (thisUnit->tubeOrWallType != mapTube)
-		thisUnit->flags |= UNIT_CANBEDAMAGED;
-
-	static DWORD jumpToAddr;
-	jumpToAddr = OP2Addr(0x43BE21);
-	__asm
-	{
-		popad
-
-		// Reissue overwritten instructions
-		push 3
-		mov eax, [esi + 0x18]
-		// Jump back to original function
-		jmp jumpToAddr
-	}
-}
-
-
-void __declspec(naked) Unit_MoBuildWallDoneAll_Trampoline()
-{
-	static OP2Unit *thisUnit;
-	__asm
-	{
-		mov thisUnit, esi
-
-		pushad
-	}
-	if (thisUnit->tubeOrWallType != mapTube)
-		thisUnit->flags |= UNIT_CANBEDAMAGED;
-
-	static int localPlayerNum;
-	localPlayerNum = ((OP2Game*)gameObj)->localPlayer; // Should be a bit faster than calling TethysGame::LocalPlayer()
-
-	static DWORD jumpToAddr;
-	jumpToAddr = OP2Addr(0x43BE64);
-	__asm
-	{
-		popad
-
-		// Reissue overwritten instructions
-		mov ecx, localPlayerNum
-		// Jump back to original function
-		jmp jumpToAddr
-	}
-}
-
-
-void __declspec(naked) PaletteTrampoline()
-{
-	__asm
-	{
-		pushad
-	}
-	__asm
-	{
-		popad
-	}
-}
-
-
-void __declspec(naked) MissionEndTrampoline()
-{
-	__asm
-	{
-		pushad
-	}
-	static DWORD jumpToAddr;
-	static int gameTermReasons = ((OP2Game*)gameObj)->gameTermReasons;
-
-	if (gConfigFile.GetInt("Game", "ShowMovies", 1))
-	{
-		if (gameTermReasons == 3 || gameTermReasons == 7) // Mission accomplished or victory is sweet
-			PlayAvi("MEF.AVI", true);
-		else if (gameTermReasons == 4 || gameTermReasons == 8) // Mission failed or you have been defeated
-			PlayAvi("MEBL.AVI", true);
-	}
-
-	// If single player, make the game think the mission was a demo so it doesn't play another cutscene after ours
-	if (gameTermReasons == 3 || gameTermReasons == 4)
-		gameTermReasons = 10;
-
-	jumpToAddr = OP2Addr(0x49CB49);
-	__asm
-	{
-		popad
-
-		// Reissue overwritten instructions
-		mov eax, gameTermReasons;
-		// Jump back to original function
-		jmp jumpToAddr;
-	}
-}
-
-
-void __declspec(naked) AllianceFormedBrokenFromMessage_Trampoline()
-{
-	static int thisPlayerNum, playerNum;
-	__asm
-	{
-		mov ecx, [ebp + 0]
-		mov thisPlayerNum, ecx
-		mov playerNum, esi
-
-		pushad
-	}
-	static DWORD jumpToAddr;
-
-	if (playerNum != ((OP2Game*)gameObj)->localPlayer
-		|| thisPlayerNum >= 6
-		|| ((OP2Game*)gameObj)->tick == 0)
-		jumpToAddr = OP2Addr(0x410051); // skip
-	else
-		jumpToAddr = OP2Addr(0x40FFD1);
-	__asm
-	{
-		popad
-
-		// Jump back to original function
-		jmp jumpToAddr;
-	}
-}
-
-
-void __declspec(naked) AllianceFormedBrokenWithMessage_Trampoline()
-{
-	static int thisPlayerNum, playerNum;
-	__asm
-	{
-		mov ecx, [ebp + 0]
-		mov thisPlayerNum, ecx
-		mov playerNum, esi
-
-		pushad
-	}
-	static DWORD jumpToAddr;
-
-	if (thisPlayerNum != ((OP2Game*)gameObj)->localPlayer
-		|| playerNum >= 6
-		|| ((OP2Game*)gameObj)->tick == 0)
-		jumpToAddr = OP2Addr(0x4100C8); // skip
-	else
-		jumpToAddr = OP2Addr(0x41005D);
-
-	__asm
-	{
-		popad
-
-		// Jump back to original function
-		jmp jumpToAddr;
-	}
+  return success;
 }

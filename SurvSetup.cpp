@@ -13,7 +13,7 @@
 #define numof(array) (sizeof(array)/sizeof(array[0]))
 #define autosize(array) numof(array), array
 
-// Global Variables and stuff
+// Global Variables
 bool DEBUG_MODE = false;         // enable for testing purposes
 
 // We're going to reuse these triggers a couple of times over the course of the game.
@@ -37,6 +37,11 @@ Trigger BlightSpawn,
         BlightRate4,
 		BlightRate5,
 		BlightRate6;
+
+// Used to reference the triggers that mark the tutorial objectives complete.
+Trigger Tutorial_AllPlayersHaveCCs,
+        Tutorial_CheckDone,
+		Tutorial_DummyObjective;
 
 // -----------------------------------------------------------------------
 // Pre-Game Setup
@@ -73,7 +78,110 @@ Export void UnsteadyMorale()
 
 }
 
-// Setup Victory and Defeat Conditions
+// Dummy objectives to give new players a basic rundown of Survivor's special rules.
+// Also sets up defeat conditions.
+void SetupTutorial()
+{
+	if (DEBUG_MODE == false)
+	{
+		Trigger Defeat;
+
+		// Mark the tutorial objectives as complete once all players have operational CCs, or if 100 marks have passed.
+		// Fail the mission when there are no human-owned Command Centers (deployed or in ConVecs).
+		Trigger FirstCC[5], NoCCs[5], NoConVecs[5];
+		int ai = -1;
+		for (int i = 0; i < TethysGame::NoPlayers(); i++)
+		{
+			if (!Player[i].IsHuman() && ai < 0)
+			{
+				ai = i;
+			}
+		}
+
+		switch (ai)
+		{
+		case 5:
+			FirstCC[4] = CreateOperationalTrigger(1, 1, 4, mapCommandCenter, 1, cmpGreaterEqual, "None");
+			NoCCs[4] = CreateCountTrigger(1, 0, 4, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
+			NoConVecs[4] = CreateCountTrigger(1, 0, 4, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
+		case 4:
+			FirstCC[3] = CreateOperationalTrigger(1, 1, 3, mapCommandCenter, 1, cmpGreaterEqual, "None");
+			NoCCs[3] = CreateCountTrigger(1, 0, 3, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
+			NoConVecs[3] = CreateCountTrigger(1, 0, 3, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
+		case 3:
+			FirstCC[2] = CreateOperationalTrigger(1, 1, 2, mapCommandCenter, 1, cmpGreaterEqual, "None");
+			NoCCs[2] = CreateCountTrigger(1, 0, 2, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
+			NoConVecs[2] = CreateCountTrigger(1, 0, 2, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
+		case 2:
+			FirstCC[1] = CreateOperationalTrigger(1, 1, 1, mapCommandCenter, 1, cmpGreaterEqual, "None");
+			NoCCs[1] = CreateCountTrigger(1, 0, 1, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
+			NoConVecs[1] = CreateCountTrigger(1, 0, 1, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
+		case 1:
+			FirstCC[0] = CreateOperationalTrigger(1, 1, 0, mapCommandCenter, 1, cmpGreaterEqual, "None");
+			NoCCs[0] = CreateCountTrigger(1, 0, 0, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
+			NoConVecs[0] = CreateCountTrigger(1, 0, 0, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
+			break;
+		default:
+			TethysGame::AddMessage(-1, -1, "Error determining # of players", -1, -1);
+			break;
+		}
+
+		switch (ai)
+		{
+		case 5:
+			Tutorial_AllPlayersHaveCCs = CreateSetTrigger(1, 0, 5, 5, "None", FirstCC[0], FirstCC[1], FirstCC[2], FirstCC[3], FirstCC[4]);
+			Defeat = CreateSetTrigger(1, 0, 10, 10, "None", NoCCs[0], NoCCs[1], NoCCs[2], NoCCs[3], NoCCs[4],
+															NoConVecs[0], NoConVecs[1], NoConVecs[2], NoConVecs[3], NoConVecs[4]);
+			break;
+		case 4:
+			Tutorial_AllPlayersHaveCCs = CreateSetTrigger(1, 0, 4, 4, "None", FirstCC[0], FirstCC[1], FirstCC[2], FirstCC[3]);
+			Defeat = CreateSetTrigger(1, 0, 8, 8, "None", NoCCs[0], NoCCs[1], NoCCs[2], NoCCs[3],
+														  NoConVecs[0], NoConVecs[1], NoConVecs[2], NoConVecs[3]);
+			break;
+		case 3:
+			Tutorial_AllPlayersHaveCCs = CreateSetTrigger(1, 0, 3, 3, "None", FirstCC[0], FirstCC[1], FirstCC[2]);
+			Defeat = CreateSetTrigger(1, 0, 6, 6, "None", NoCCs[0], NoCCs[1], NoCCs[2],
+														  NoConVecs[0], NoConVecs[1], NoConVecs[2]);
+			break;
+		case 2:
+			Tutorial_AllPlayersHaveCCs = CreateSetTrigger(1, 0, 2, 2, "None", FirstCC[0], FirstCC[1]);
+			Defeat = CreateSetTrigger(1, 0, 4, 4, "None", NoCCs[0], NoCCs[1],
+														  NoConVecs[0], NoConVecs[1]);
+			break;
+		case 1:
+			Tutorial_AllPlayersHaveCCs = FirstCC[0];
+			Defeat = CreateSetTrigger(1, 0, 2, 2, "None", NoCCs[0],
+														  NoConVecs[0]);
+			break;
+		}
+
+		Tutorial_CheckDone = CreateTimeTrigger(1, 0, 16, "SetupRealObjectives");
+		Tutorial_DummyObjective = CreateTimeTrigger(0, 1, 1, "None");
+		CreateVictoryCondition(1, 0, Tutorial_DummyObjective, "Use Scouts to reveal mining beacons.");
+		if (Player[TethysGame::LocalPlayer()].Difficulty() != 0)
+		{
+			CreateVictoryCondition(1, 0, Tutorial_DummyObjective, "One Evacuation Transport holds 25 colonists.");
+			CreateVictoryCondition(1, 0, Tutorial_DummyObjective, "Future evacuations will require enough Evacuation Transports and food loaded in Cargo Trucks for your population.");
+		}
+		CreateVictoryCondition(1, 0, Tutorial_DummyObjective, "Escape from the Blight and establish a new temporary colony.");
+
+		CreateFailureCondition(1, 0, Defeat, "No human players with CCs or ConVecs loaded with CC kits.");
+	}
+}
+
+Export void SetupRealObjectives()
+{
+	if (TethysGame::Tick() >= 10000 || Tutorial_AllPlayersHaveCCs.HasFired(TethysGame::LocalPlayer()))
+	{
+		TethysGame::AddMessage(-1, -1, "New objective.", -1, sndSavant30);
+		SetupVictory();
+		Tutorial_DummyObjective.Enable();
+		Tutorial_AllPlayersHaveCCs.Destroy();
+		Tutorial_CheckDone.Destroy();
+	}
+}
+
+// Setup actual victory conditions
 void SetupVictory()
 {
     if (DEBUG_MODE == false)
@@ -91,9 +199,7 @@ void SetupVictory()
                 ComCarg,
                 RarCarg,
                 FodCarg,
-                EvacMod,
-
-                Defeat;
+                EvacMod;
 
         // Evacuation Module
         EvacMod = CreateCountTrigger(1, 1, -1, mapEvacuationModule, mapNone, 1, cmpGreaterEqual, "None");
@@ -150,65 +256,6 @@ void SetupVictory()
         // Skydock
         Skydock = CreateCountTrigger(1, 0, -1, mapSkydock, mapNone, 1, cmpGreaterEqual, "None");
         CreateVictoryCondition(1, 0, Skydock, "Place the Skydock in orbit.");
-
-		Trigger NoCCs[5], NoConVecs[5];
-		int ai = -1;
-		for (int i = 0; i < TethysGame::NoPlayers(); i++)
-		{
-			if (!Player[i].IsHuman() && ai < 0)
-		    {
-		        ai = i;
-			}
-		}
-	
-		switch (ai)
-		{
-			case 5:
-				NoCCs[4] = CreateCountTrigger(1, 0, 4, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
-				NoConVecs[4] = CreateCountTrigger(1, 0, 4, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
-			case 4:
-				NoCCs[3] = CreateCountTrigger(1, 0, 3, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
-				NoConVecs[3] = CreateCountTrigger(1, 0, 3, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
-			case 3:
-				NoCCs[2] = CreateCountTrigger(1, 0, 2, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
-				NoConVecs[2] = CreateCountTrigger(1, 0, 2, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
-			case 2:
-				NoCCs[1] = CreateCountTrigger(1, 0, 1, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
-				NoConVecs[1] = CreateCountTrigger(1, 0, 1, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
-			case 1:
-				NoCCs[0] = CreateCountTrigger(1, 0, 0, mapCommandCenter, mapNone, 0, cmpLowerEqual, "None");
-				NoConVecs[0] = CreateCountTrigger(1, 0, 0, mapConVec, mapCommandCenter, 0, cmpLowerEqual, "None");
-				break;
-			default:
-				TethysGame::AddMessage(-1, -1, "Error determining # of players", -1, -1);
-				break;
-		}
-
-		switch (ai)
-		{
-			case 5:
-				Defeat = CreateSetTrigger(1, 0, 10, 10, "None", NoCCs[0], NoCCs[1], NoCCs[2], NoCCs[3], NoCCs[4],
-					                                            NoConVecs[0], NoConVecs[1], NoConVecs[2], NoConVecs[3], NoConVecs[4]);
-				break;
-			case 4:
-				Defeat = CreateSetTrigger(1, 0, 8, 8, "None", NoCCs[0], NoCCs[1], NoCCs[2], NoCCs[3],
-					                                          NoConVecs[0], NoConVecs[1], NoConVecs[2], NoConVecs[3]);
-				break;
-			case 3:
-				Defeat = CreateSetTrigger(1, 0, 6, 6, "None", NoCCs[0], NoCCs[1], NoCCs[2],
-					                                          NoConVecs[0], NoConVecs[1], NoConVecs[2]);
-				break;
-			case 2:
-				Defeat = CreateSetTrigger(1, 0, 4, 4, "None", NoCCs[0], NoCCs[1],
-					                                          NoConVecs[0], NoConVecs[1]);
-				break;
-			case 1:
-				Defeat = CreateSetTrigger(1, 0, 2, 2, "None", NoCCs[0],
-					                                          NoConVecs[0]);
-				break;
-		}
-
-		CreateFailureCondition(1, 0, Defeat, "No human players with CCs or ConVecs loaded with CC kits.");
     }
 }
 
@@ -239,65 +286,10 @@ void SetAllLava()
 
 } // end SetAllLava
 
-// Set Initial Resources For All Players
-void SetupInitRes()
-{
-    short i;
-    for (i = 0; i < TethysGame::NoPlayers(); i++)
-    {
-        switch (Player[i].Difficulty() )
-        {
-            case 0:
-                Player[i].SetKids(22);
-                Player[i].SetWorkers(32);
-                Player[i].SetScientists(21);
-                Player[i].SetFoodStored(3600);
-                Player[i].MarkResearchComplete(2702);   // Boptronics
-                Player[i].MarkResearchComplete(2705);   // Social Sciences
-                Player[i].MarkResearchComplete(3304);   // Offspring Enhancement
-				Player[i].MarkResearchComplete(3401);   // Cybernetic Teleoperation
-                Player[i].MarkResearchComplete(3407);   // Large-Scale Optical Resonators
-                Player[i].MarkResearchComplete(3408);   // Focused Microwave Projection
-                break;
-
-            case 1:
-                Player[i].SetKids(18);
-                Player[i].SetWorkers(28);
-                Player[i].SetScientists(19);
-                Player[i].SetFoodStored(2400);
-                Player[i].MarkResearchComplete(2701);   // Astronomy
-				Player[i].MarkResearchComplete(3304);   // Offspring Enhancement
-                Player[i].MarkResearchComplete(3407);   // Large-Scale Optical Resonators
-                Player[i].MarkResearchComplete(3408);   // Focused Microwave Projection
-                break;
-
-            case 2:
-                Player[i].SetKids(14);
-                Player[i].SetWorkers(24);
-                Player[i].SetScientists(15);
-                Player[i].SetFoodStored(2000);
-                Player[i].MarkResearchComplete(3407);   // Large-Scale Optical Resonators
-                Player[i].MarkResearchComplete(3408);   // Focused Microwave Projection
-                break;
-        }
-
-        if (DEBUG_MODE == true)
-        {
-            Player[i].SetTechLevel(12);
-            if (i == 0)
-            {
-                TethysGame::ForceMoraleGreat(-1);
-            }
-        }
-
-    }
-
-}   // end SetupInitRes
-
 void SetupWreckage()
 {
     // You can never get up here.
-    TethysGame::CreateWreck(58+31, 247-1, (map_id)9706,  0);       // WTF
+    TethysGame::CreateWreck(58+31, 247-1, (map_id)9706,  0);
 
     if (DEBUG_MODE == true)
     {
@@ -320,64 +312,6 @@ void SetupWreckage()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-// Mining Beacon Setup
-// -----------------------------------------------------------------------
-
-void CreateRes(RandomRes & res) // Helper function
-{
-	if (res.requireSmelterSpace == 0)
-	{
-		res.requireSmelterSpace = 2;
-		res.noSmelterOverlap = true;
-		res.maxSmelterSpacing = 1;
-	}
-	//res.scoutsFindBeacons = true;
-	res.allowLavaPossible = false;
-
-	res.Create();
-}
-
-void SetupMines()
-{
-	RandomRes bottom = RandomRes(MAP_RECT(MapLocation(1,176),MapLocation(128,215)), 16, 5, 2, 1, 8);
-	//bottom.SetToIncludedArea(MAP_RECT(MapLocation(1,206),MapLocation(69,255)),0); // Exclude the very bottom left corner close to the Blight
-	//bottom.SetToIncludedArea(MAP_RECT(MapLocation(53,225),MapLocation(100,255)),0); // Exclude the bottom middle area close to the Blight
-	bottom.SetWeights(0, 0, 999, 2, 1, 0);
-	bottom.scoutsFindBeacons = false;
-	CreateRes(bottom);
-	
-	RandomRes middleBot = RandomRes(MAP_RECT(MapLocation(1,92),MapLocation(128,141)), 10, 5, 3, 3, 8);
-	middleBot.SetWeights(1, 4, 2, 2, 4, 3);
-	middleBot.scoutsFindBeacons = !DEBUG_MODE;
-	//middleBot.scoutsFindBeacons = false;
-	CreateRes(middleBot);
-	
-	RandomRes middleTop = RandomRes(MAP_RECT(MapLocation(1,40),MapLocation(128,91)), 14, 9, 3, 3, 8);
-	middleTop.SetWeights(3, 4, 2, 4, 5, 3);
-	middleTop.scoutsFindBeacons = !DEBUG_MODE;
-	//middleTop.scoutsFindBeacons = false;
-	CreateRes(middleTop);
-	
-	RandomRes top = RandomRes(MAP_RECT(MapLocation(1,1),MapLocation(128,39)), 4, 3, 2, 1, 8);
-	top.SetToIncludedArea(MAP_RECT(MapLocation(41,1),MapLocation(100,35)),0);
-	top.SetToIncludedArea(MAP_RECT(MapLocation(101,1),MapLocation(128,21)),0);
-	top.SetToIncludedArea(MAP_RECT(MapLocation(16,1),MapLocation(40,7)),0);
-	top.SetToIncludedArea(MAP_RECT(MapLocation(25,6),MapLocation(47,29)),0);
-	top.scoutsFindBeacons = !DEBUG_MODE;
-	//top.scoutsFindBeacons = false;
-	top.SetWeights(1, 1, 5, 1, 3, 4);
-	CreateRes(top);
-
-	// I want this one here, always.  It's kind of a trap but you actually can survive there for one night.
-	// Think of it as a "challenge mode" run. (no longer releveant since the Blight start moved)
-	//TethysGame::CreateBeacon(mapMiningBeacon,   43+31, 225-1, 0,  0,  0);
-
-}   // end SetupMines
-
-
-// -----------------------------------------------------------------------
-
-// -----------------------------------------------------------------------
 // Base Setup - Randomizes starting locations, creates player bases
 // -----------------------------------------------------------------------
 
@@ -395,215 +329,30 @@ void DoRandomBases()
     // Create bases - check to make sure owner is active first!
     if (Player[i[0]].IsHuman() || DEBUG_MODE == true )
     {
-		SetupBase(i[0], 58, 240);
-		//SetupBase(i[0], 76, 69);		// Debug start.
+		SpawnPlayer(i[0], 58, 240);
     }
 
     if (Player[i[1]].IsHuman() || DEBUG_MODE == true )
     {
-		SetupBase(i[1], 66, 234);
-		//SetupBase(i[1], 49, 49);		// Debug start.
+		SpawnPlayer(i[1], 66, 234);
     }
 
     if (Player[i[2]].IsHuman() || DEBUG_MODE == true )
     {
-        SetupBase(i[2], 75, 230);
-		//SetupBase(i[2], 86, 80);		// Debug start.
+		SpawnPlayer(i[2], 75, 230);
     }
 
     if (Player[i[3]].IsHuman() || DEBUG_MODE == true )
     {
-        SetupBase(i[3], 82, 240);
-		//SetupBase(i[3], 103, 94);		// Debug start.
+		SpawnPlayer(i[3], 82, 240);
     }
 
     if (Player[i[4]].IsHuman() || DEBUG_MODE == true )
     {
-        SetupBase(i[4], 86, 246);
-		//SetupBase(i[4], 118, 62);		// Debug start.
+		SpawnPlayer(i[4], 86, 246);
     }
 
 }   // end DoRandomBases
-
-void SetupBase(int i, int x, int y)
-{
-    Unit Unit1;
-    Player[i].CenterViewOn(x+31, y-1);
-	
-    // Land Rush style start.  Resource setting determines initial units.
-    if (Player[i].Difficulty() == 0)
-    {
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, y-1), i, mapCommandCenter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, y-1), i, mapStructureFactory, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, y-1), i, mapCommonOreSmelter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+3)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+4)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+5)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, (y+1)-1), i, mapTokamak, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, (y+1)-1), i, mapAgridome, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, (y+1)-1), i, mapBasicLab, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboMiner, LOCATION((x+3)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboSurveyor, LOCATION((x+4)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+5)+31, (y+1)-1), i, mapCommandCenter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION(x+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckFood, 1800);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+1)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckFood, 1800);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+2)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+3)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+4)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEarthworker, LOCATION((x+5)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-    }
-
-    else if (Player[i].Difficulty() == 1)
-    {
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, y-1), i, mapCommandCenter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, y-1), i, mapStructureFactory, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, y-1), i, mapCommonOreSmelter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+3)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+4)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapEarthworker, LOCATION((x+5)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, (y+1)-1), i, mapTokamak, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, (y+1)-1), i, mapAgridome, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, (y+1)-1), i, mapBasicLab, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboMiner, LOCATION((x+3)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboSurveyor, LOCATION((x+4)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION(x+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckFood, 1400);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+1)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckFood, 1400);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+2)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+3)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+4)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-    }
-
-    else if (Player[i].Difficulty() == 2)
-    {
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, y-1), i, mapCommandCenter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, y-1), i, mapStructureFactory, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, y-1), i, mapCommonOreSmelter, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION((x+3)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckCommonMetal, 1000);
-        TethysGame::CreateUnit(Unit1, mapEarthworker, LOCATION((x+4)+31, y-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, (y+1)-1), i, mapTokamak, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, (y+1)-1), i, mapAgridome, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, (y+1)-1), i, mapBasicLab, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboMiner, LOCATION((x+3)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapRoboSurveyor, LOCATION((x+4)+31, (y+1)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION(x+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-            Unit1.SetTruckCargo(truckFood, 2000);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+1)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+2)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        TethysGame::CreateUnit(Unit1, mapEvacuationTransport, LOCATION((x+3)+31, (y+2)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-    }
-
-    // Initial Vehicles
-    map_id ivWpn = mapMicrowave;
-    if (Player[i].IsEden() )
-    {
-        ivWpn = mapLaser;
-    }
-
-    switch (TethysGame::InitialUnits() )
-    {
-        case 12:
-          TethysGame::CreateUnit(Unit1, mapScout, LOCATION((x+5)+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        case 11:
-          TethysGame::CreateUnit(Unit1, mapRoboDozer, LOCATION((x+4)+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        case 10:
-          TethysGame::CreateUnit(Unit1, mapEarthworker, LOCATION((x+3)+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        case 9:
-          TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+2)+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-			Unit1.SetCargo(mapGuardPost, ivWpn);
-        case 8:
-          TethysGame::CreateUnit(Unit1, mapConVec, LOCATION((x+1)+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-			Unit1.SetCargo(mapGuardPost, ivWpn);
-        case 7:
-          TethysGame::CreateUnit(Unit1, mapConVec, LOCATION(x+31, (y+4)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-			Unit1.SetCargo(mapGuardPost, ivWpn);
-        case 6:
-          TethysGame::CreateUnit(Unit1, mapRoboSurveyor, LOCATION((x+5)+31, (y+3)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        case 5:
-          TethysGame::CreateUnit(Unit1, mapRoboMiner, LOCATION((x+4)+31, (y+3)-1), i, mapNone, 6);
-            Unit1.DoSetLights(1);
-        case 4:
-          TethysGame::CreateUnit(Unit1, mapLynx, LOCATION((x+3)+31, (y+3)-1), i, ivWpn, 6);
-            Unit1.DoSetLights(1);
-        case 3:
-          TethysGame::CreateUnit(Unit1, mapLynx, LOCATION((x+2)+31, (y+3)-1), i, ivWpn, 6);
-            Unit1.DoSetLights(1);
-        case 2:
-          TethysGame::CreateUnit(Unit1, mapLynx, LOCATION((x+1)+31, (y+3)-1), i, ivWpn, 6);
-            Unit1.DoSetLights(1);
-        case 1:
-          TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(x+31, (y+3)-1), i, ivWpn, 6);
-            Unit1.DoSetLights(1);
-        default:
-          // No initial vehicles.
-          break;
-    }
-
-}   // end SetupBase
 
 // -----------------------------------------------------------------------
 
@@ -655,124 +404,6 @@ void SouthWestFlowStopAni ( int x, int y)
 	GameMap::SetTile(LOCATION(x+1, y+1), 0x470);
 }
 
-void SetupDisasters()
-{
-    QuakeEnabler  = CreateTimeTrigger( 1, 1,  8000, "EnableQuakes1");
-    StormEnabler  = CreateTimeTrigger( 1, 1, 46200, "EnableStorms1");
-    //VortexEnabler = CreateTimeTrigger( 1, 1, 19400, "EnableVortex1");
-    MeteorEnabler = CreateTimeTrigger( 1, 1,  26100, "EnableMeteor1");
-    //LavaAnimTimer = CreateTimeTrigger( 1, 1, 10, "PrepVolcanoes");
-}
-
-Export void EnableQuakes1()
-{
-    Quakes = CreateTimeTrigger( 1, 0, 4830, 5410, "Quakes1");
-    QuakeEnabler.Destroy();
-    QuakeEnabler = CreateTimeTrigger( 1, 1, 32800, "EnableQuakes2");
-}
-
-Export void EnableStorms1()
-{
-    Storms = CreateTimeTrigger( 1, 0, 5300, 6900, "Storms1");
-    StormEnabler.Destroy();
-    StormEnabler = CreateTimeTrigger( 1, 1, 35200, "EnableStorms2");
-}
-
-Export void EnableVortex1()
-{
-    Vortexes = CreateTimeTrigger( 1, 0, 6200, 8400, "Vortex1");
-    VortexEnabler.Destroy();
-    VortexEnabler = CreateTimeTrigger( 1, 1, 20300, "EnableVortex2");
-}
-
-Export void EnableMeteor1()
-{
-    Meteors = CreateTimeTrigger( 1, 0, 3900, 6700, "Meteor1");
-    MeteorEnabler.Destroy();
-    MeteorEnabler = CreateTimeTrigger( 1, 1, 30400, "EnableMeteor2");
-}
-
-Export void EnableQuakes2()
-{
-    Quakes.Destroy();
-    Quakes = CreateTimeTrigger( 1, 0, 4900, 5100, "Quakes2");
-    QuakeEnabler.Destroy();
-	QuakeEnabler = CreateTimeTrigger( 1, 1, 41600, "EnableQuakes3");
-}
-
-Export void EnableStorms2()
-{
-    Storms.Destroy();
-    Storms = CreateTimeTrigger( 1, 0, 5503, 7029, "Storms2");
-    StormEnabler.Destroy();
-}
-
-Export void EnableVortex2()
-{
-    Vortexes.Destroy();
-    Vortexes = CreateTimeTrigger( 1, 0, 5400, 7200, "Vortex2");
-    VortexEnabler.Destroy();
-}
-
-Export void EnableMeteor2()
-{
-    Meteors.Destroy();
-    Meteors = CreateTimeTrigger( 1, 0, 4100, 6400, "Meteor2");
-    MeteorEnabler.Destroy();
-}
-
-Export void EnableQuakes3()
-{
-    Quakes.Destroy();
-    Quakes = CreateTimeTrigger( 1, 0, 4900, 5100, "Quakes3");
-    QuakeEnabler.Destroy();
-}
-
-Export void Quakes1()
-{
-	TethysGame::SetEarthquake(52 + TethysGame::GetRand(37)+31, 95 + TethysGame::GetRand(74)-1, 1);
-}
-
-Export void Storms1()
-{
-    TethysGame::SetLightning(TethysGame::GetRand(128)+31, 78+TethysGame::GetRand(50)-1, TethysGame::GetRand(8)+6, TethysGame::GetRand(128)+31, 78+TethysGame::GetRand(50)-1 );
-}
-
-Export void Vortex1()
-{
-    TethysGame::SetTornado(TethysGame::GetRand(256)+31, TethysGame::GetRand(256)-1, TethysGame::GetRand(20)+10, TethysGame::GetRand(256)+31, TethysGame::GetRand(256)-1, 0 );
-}
-
-Export void Meteor1()
-{
-    TethysGame::SetMeteor(3+TethysGame::GetRand(121)+31, 13+TethysGame::GetRand(226)-1, 1);
-}
-
-Export void Quakes2()
-{
-    TethysGame::SetEarthquake(52 + TethysGame::GetRand(37)+31, 42 + TethysGame::GetRand(96)-1, TethysGame::GetRand(2)+1);
-}
-
-Export void Storms2()
-{
-    TethysGame::SetLightning(TethysGame::GetRand(128)+31, 78+TethysGame::GetRand(50)-1, TethysGame::GetRand(15)+10, TethysGame::GetRand(128)+31, 78+TethysGame::GetRand(50)-1 );
-}
-
-Export void Vortex2()
-{
-    TethysGame::SetTornado(TethysGame::GetRand(256)+31, TethysGame::GetRand(256)-1, TethysGame::GetRand(35)+20, TethysGame::GetRand(256)+31, TethysGame::GetRand(256)-1, 0 );
-}
-
-Export void Meteor2()
-{
-    TethysGame::SetMeteor(3+TethysGame::GetRand(121)+31, 13+TethysGame::GetRand(121)-1, TethysGame::GetRand(3)+1);
-}
-
-Export void Quakes3()
-{
-    TethysGame::SetEarthquake(52 + TethysGame::GetRand(37)+31, 42 + TethysGame::GetRand(96)-1, TethysGame::GetRand(2)+1);
-}
-
 Export void PrepVolcanoes()
 {
     SouthFlowAni(47+31, 88-1);
@@ -811,12 +442,6 @@ void SetupBlight()
     BlightRate4 = CreateTimeTrigger( 1, 1,  82000, "BlightSpeed4");
 	BlightRate5 = CreateTimeTrigger( 1, 1,  109000, "BlightSpeed5");
 	BlightRate6 = CreateTimeTrigger( 1, 1,  150000, "BlightSpeed6");
-
-	// We can't let people getting complacent now, can we?
-	CreateTimeTrigger( 1, 1, 178000, "SurpriseBlight2");
-
-	// ???
-	Owned = CreateResearchTrigger( 1, 1, 9706, -1, "WTF_Tech");
 }
 
 Export void Blight()
@@ -871,31 +496,6 @@ Export void BlightSpeed2()
     BlightRate2.Destroy();
 }
 
-Export void SurpriseBlight2()
-{
-	// Add some Blight up in here.
-	GameMap::SetVirusUL(LOCATION(127+31, 101-1), 1);
-	GameMap::SetVirusUL(LOCATION(127+31, 102-1), 1);
-	GameMap::SetVirusUL(LOCATION(127+31, 103-1), 1);
-
-	GameMap::SetVirusUL(LOCATION(128+31, 100-1), 1);
-	GameMap::SetVirusUL(LOCATION(128+31, 101-1), 1);
-	GameMap::SetVirusUL(LOCATION(128+31, 102-1), 1);
-	GameMap::SetVirusUL(LOCATION(128+31, 103-1), 1);
-	GameMap::SetVirusUL(LOCATION(128+31, 104-1), 1);
-
-	GameMap::SetVirusUL(LOCATION(129+31,  99-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 100-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 101-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 102-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 103-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 104-1), 1);
-	GameMap::SetVirusUL(LOCATION(129+31, 105-1), 1);
-
-	// Warning Message
-	TethysGame::AddMessage((128+31)*32, (102-1)*32, "Microbe growth detected!", -1, 152);
-}
-
 Export void BlightSpeed3()
 {
 	TethysGame::SetMicrobeSpreadSpeed(19);    
@@ -927,52 +527,20 @@ Export void BlightSpeed6()
 // Misc. Functions
 // -----------------------------------------------------------------------
 
-// Function to own some poor fool
-Export void WTF_Tech()
+// Easter egg for somehow retrieving the inaccessible wreckage.
+Export void v2()
 {
-    short i, x;
+	short i, x;
 
-    for (i = 0; i < TethysGame::NoPlayers(); i++)
-    {
-        // Find out which player actually researched the tech
-        if (Player[i].HasTechnology(9706) )
-        {
-            x = i;
+	for (i = 0; i < TethysGame::NoPlayers(); i++)
+	{
+		// Find out which player actually researched the tech
+		if (Player[i].HasTechnology(9706))
+		{
+			x = i;
 
-            // Warn that player of impending DETH
-            TethysGame::AddMessage( -1, -1, "You are n00b; your colony is doomed!", x, sndSavnt227);
-        }
-    }
-
-    // Find all buildings owned by that player and own them
-    Unit curUnit;
-    PlayerBuildingEnum unitEnum(x, mapNone);
-    while (unitEnum.GetNext(curUnit) )
-    {
-        //curUnit.DoDeath();
-        LOCATION curLoc = curUnit.Location();
-        short curX = curLoc.x;
-        short curY = curLoc.y;
-
-        TethysGame::SetTornado(curX, curY, 0, curX, curY, 1);
-    }
-
-    // Vehicles don't get Vortex'd, just killed off
-    PlayerVehicleEnum vechEnum(x);
-    while (vechEnum.GetNext(curUnit) )
-    {
-        curUnit.DoSelfDestruct();
-    }
-
-	TethysGame::SetMicrobeSpreadSpeed(2000);
-    Owned.Destroy();
-	CreateTimeTrigger(1, 0, 16, "WTF_Tech_Part2");
+			// Send them a message
+			TethysGame::AddMessage(-1, -1, "I'm really proud of the work I did on this mission!", x, sndLab_1);
+		}
+	}
 }
-
-Export void WTF_Tech_Part2()
-{
-	TethysGame::SetMicrobeSpreadSpeed(2000);
-	GameMap::SetInitialLightLevel(TethysGame::GetRand(128)+32);
-}
-
-// end of file

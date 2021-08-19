@@ -59,38 +59,47 @@
     <ClCompile Include="PlayerEvents\PlayerEvents.cpp">
       <Filter>Player Events %28No Agridomes, Etc.%29</Filter>
     </ClCompile>
-    <ClCompile Include="Patches\BlightHook.cpp">
+    <ClCompile Include="Mission\PlayerSetup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mission\Disasters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\AcidTrip.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\Blight.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\ChatMessageHook.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\CreateUnitHook.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
     <ClCompile Include="Patches\Cutscene.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
-    <ClCompile Include="Patches\DIRTRepair.cpp">
-      <Filter>Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="Patches\DualTurretUnit.cpp">
-      <Filter>Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="Patches\ExtLocation.cpp">
-      <Filter>Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="Patches\HookHelper.cpp">
-      <Filter>Patches</Filter>
-    </ClCompile>
-    <ClCompile Include="Patches\MessageHook.cpp">
+    <ClCompile Include="Patches\DirtRepair.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
     <ClCompile Include="Patches\MiscPatches.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
-    <ClCompile Include="Patches\Patcher.cpp">
+    <ClCompile Include="Patches\NuclearMissile.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
     <ClCompile Include="Patches\RandomResources.cpp">
       <Filter>Patches</Filter>
     </ClCompile>
-    <ClCompile Include="Patches\UnitHookHelper.cpp">
+    <ClCompile Include="Patches\ExtLocation.cpp">
       <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Patches\Patcher.cpp">
+      <Filter>Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="Mission\OreSetup.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -163,38 +172,35 @@
     <ClInclude Include="PlayerEvents\PlayerEvents.h">
       <Filter>Player Events %28No Agridomes, Etc.%29</Filter>
     </ClInclude>
-    <ClInclude Include="Patches\BlightHook.h">
-      <Filter>Patches</Filter>
-    </ClInclude>
     <ClInclude Include="Patches\Cutscene.h">
       <Filter>Patches</Filter>
     </ClInclude>
-    <ClInclude Include="Patches\DIRTRepair.h">
+    <ClInclude Include="Patches\DirtRepair.h">
       <Filter>Patches</Filter>
     </ClInclude>
-    <ClInclude Include="Patches\DualTurretUnit.h">
-      <Filter>Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="Patches\ExtLocation.h">
-      <Filter>Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="Patches\HookHelper.h">
-      <Filter>Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="Patches\MessageHook.h">
-      <Filter>Patches</Filter>
-    </ClInclude>
-    <ClInclude Include="Patches\MiscPatches.h">
+    <ClInclude Include="Patches\MapObjectVtbls.h">
       <Filter>Patches</Filter>
     </ClInclude>
     <ClInclude Include="Patches\Patcher.h">
       <Filter>Patches</Filter>
     </ClInclude>
+    <ClInclude Include="Patches\PatcherUtil.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\Patches.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
     <ClInclude Include="Patches\RandomResources.h">
       <Filter>Patches</Filter>
     </ClInclude>
-    <ClInclude Include="Patches\UnitHookHelper.h">
+    <ClInclude Include="Patches\Util.h">
       <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Patches\ExtLocation.h">
+      <Filter>Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

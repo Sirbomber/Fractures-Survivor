@@ -1,10 +1,4 @@
-#ifndef DIRTREPAIR_H
-#define DIRTREPAIR_H
 
-#include <Outpost2DLL.h>
+#pragma once
 
-void SetupDIRTRepair();
-
-Export void DIRTRepair();
-
-#endif
+void SetupDirtRepair();

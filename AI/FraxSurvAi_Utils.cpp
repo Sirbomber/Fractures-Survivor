@@ -88,6 +88,12 @@ void FraxSurvAI::FindNearestCommandCenter()
 		}
 	}
 
+	if (attackRoute != NULL)
+	{
+		delete[] attackRoute;
+		attackRoute = NULL;
+	}
+
 	// Target (and associated waypoint) found.  Trace back to start location.
 	if (w != NULL)
 	{
@@ -102,12 +108,6 @@ void FraxSurvAI::FindNearestCommandCenter()
 			i++;
 		}
 		odprintf(" >Route found.\n");
-
-		if (attackRoute != NULL)
-		{
-			delete [] attackRoute;
-			attackRoute = NULL;
-		}
 
 		// We have the attack route, but it's in backwards order.  Flip it around!
 		attackRoute = new LOCATION[i];

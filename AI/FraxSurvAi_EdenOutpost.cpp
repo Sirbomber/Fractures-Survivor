@@ -32,7 +32,7 @@ void FraxSurvAI::FraxSurvAI::SetupOutpost1()
 	TethysGame::CreateBeacon(mapMiningBeacon, 15 + 31, 144 - 1, 0, 1, -1);
 	TethysGame::CreateUnit(cMine, mapCommonOreMine, LOCATION(15 + 31, 144 - 1), aiNum, mapNone, 0);
 
-	// Civillian Vehicles
+	// Civilian Vehicles
 	TethysGame::CreateUnit(Unit1, mapCargoTruck, LOCATION(10 + 31, 143 - 1), aiNum, mapNone, 0);
 	Unit1.DoSetLights(1);
 	EdenCommon.TakeUnit(Unit1);
@@ -45,6 +45,20 @@ void FraxSurvAI::FraxSurvAI::SetupOutpost1()
 	//    Unit1.DoSetLights(1);
 
 	// Defenders
+	for (int i = 0; i < (5 + numHumansEasy + (numHumansNormal * 1.5) + (numHumansHard * 2)); i++)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(20 + i + 31, 142 - 1), aiNum, mapLaser, 0);
+		Unit1.DoSetLights(1);
+		EdenDefense.TakeUnit(Unit1);
+	}
+	for (int i = 0; i < ((numHumansNormal * 1) + (numHumansHard * 2.5)); i++)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(18 + i + 31, 140 - 1), aiNum, mapRailGun, 0);
+		Unit1.DoSetLights(1);
+		EdenDefense.TakeUnit(Unit1);
+	}
+
+	/*
 	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(20 + 31, 142 - 1), aiNum, mapLaser, 0);
 	Unit1.DoSetLights(1);
 	EdenDefense.TakeUnit(Unit1);
@@ -93,7 +107,7 @@ void FraxSurvAI::FraxSurvAI::SetupOutpost1()
 	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(21 + 31, 140 - 1), aiNum, mapRailGun, 0);
 	Unit1.DoSetLights(1);
 	EdenDefense.TakeUnit(Unit1);
-
+	*/
 
 	// Guard Posts
 	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(44 + 31, 170 - 1), aiNum, mapLaser, 0);
@@ -133,14 +147,14 @@ void FraxSurvAI::PrepareUnitGroupsEden()
 
 	// Defense group
 	EdenDefense = CreateFightGroup(aiNum);
-	EdenDefense.SetTargCount(mapLynx, mapLaser, 12);
-	EdenDefense.SetTargCount(mapLynx, mapRailGun, 4);
+	EdenDefense.SetTargCount(mapLynx, mapLaser, (int)(5 + numHumansEasy + (numHumansNormal * 1.5) + (numHumansHard * 2)));
+	EdenDefense.SetTargCount(mapLynx, mapRailGun, (int)((numHumansNormal * 1) + (numHumansHard * 2.5)));
 	EdenDefense.SetRect(MAP_RECT(17 + 31, 139 - 1, 28 + 31, 147 - 1));
 	EdenDefense.AddGuardedRect(MAP_RECT(1 + 31, 126 - 1, 30 + 31, 158 - 1));
 	EdenVF[0].RecordVehReinforceGroup(EdenDefense, 7000);
 
 	EdenOffense = CreateFightGroup(aiNum);
-	EdenOffense.SetTargCount(mapLynx, mapLaser, (2 * (TethysGame::NoPlayers())) + 1);
+	EdenOffense.SetTargCount(mapLynx, mapLaser, (int)(numHumansEasy + (numHumansNormal * 1.75) + (numHumansHard * 2.5) + 6));
 	EdenOffense.SetRect(MAP_RECT(17 + 31, 139 - 1, 28 + 31, 147 - 1));
 	EdenOffense.AddGuardedRect(MAP_RECT(1 + 31, 126 - 1, 30 + 31, 158 - 1));
 	EdenVF[1].RecordVehReinforceGroup(EdenOffense, 7000);

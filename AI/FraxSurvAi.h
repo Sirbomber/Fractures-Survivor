@@ -6,12 +6,14 @@
 #include <hfl.h>
 #include "OP2Types.h"
 #include "FraxSurvWaypoints.h"
+//#include "CombatGroup.h"
 
 //#define NOAIFACTORIES
 //#define NOAIMINING
 //#define NOAICIVUNITS
 //#define NOAIMILUNITS
 #define NOAIREPAIRS
+//#define USECOMBATGROUPS
 // Note: AI repairs are disabled due to an OP2 bug/crash that involves reinforcing from a rebuilt Arachnid Factory
 
 // I thought about storing smelters/etc in lists, but that would cause problems with saved games, so hardcoded arrays it is.
@@ -31,7 +33,7 @@ const int AI_PLYM_VF_GROUPS = 2;
 // Attack wave delay constants
 const int MAIN_DELAY_MIN = 7100,
 		  MAIN_DELAY_MAX = 7600;
-const int SPACEPORT_DELAY = 55000;
+const int SPACEPORT_DELAY = 75000;
 const int NUM_WAYPOINTS = 20;
 
 class FraxSurvAI
@@ -154,7 +156,16 @@ private:
 		MainOffense[3],
 		EdenOffense,
 		PlymouthOffense,
-		Attacking[2];
+		Attacking[2],
+		RevengeGroup[2];
+		//PreOffense[10];							// These groups are used to store units before they actually go out on attack.
+	                                            // They're only used for compatibility with built-in Vehicle Factory AI functionality, but the units get moved to a CombatGroup when given the attack order.
+	                                            // 0 - 5: Reserved for units built at main base.
+	                                            // 6 - 7: Reserved for units built at the Eden outpost.
+												// 8 - 9: Reserved for units built at the Plymouth outpost.
+#ifdef USECOMBATGROUPS
+	std::vector<CombatGroup> allCombatGroups;	// These groups are used when a group is actually out in battle.
+#endif
 
 	// Track these so we can make EMP Missiles.
 	UnitEx Spaceport[2];

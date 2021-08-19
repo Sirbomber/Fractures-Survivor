@@ -32,14 +32,18 @@ void CreatePlayerEvents(int playerId)
 
 	oldFoodStored[playerId] = -1;
 
-	scr_snprintf(trigName[0], sizeof(trigName[0]), "NoStructures_P%i", playerId);
-	CreateBuildingCountTrigger(1, 0, playerId, 0, cmpLowerEqual, trigName[0]);
+	// Lift the "food in trucks" and "have enough ETs for your population" requirements for players playing on easy.
+	if (Player[playerId].Difficulty() != 0)
+	{
+		scr_snprintf(trigName[0], sizeof(trigName[0]), "NoStructures_P%i", playerId);
+		CreateBuildingCountTrigger(1, 0, playerId, 0, cmpLowerEqual, trigName[0]);
 
-	scr_snprintf(trigName[1], sizeof(trigName[1]), "NoAgridomes_P%i", playerId);
-	CreateCountTrigger(1, 0, playerId, mapAgridome, mapAny, 0, cmpLowerEqual, trigName[1]);
+		scr_snprintf(trigName[1], sizeof(trigName[1]), "NoAgridomes_P%i", playerId);
+		CreateCountTrigger(1, 0, playerId, mapAgridome, mapAny, 0, cmpLowerEqual, trigName[1]);
 
-	scr_snprintf(trigName[2], sizeof(trigName[2]), "RebuiltAgridome_P%i", playerId);
-	playerRebuiltAgridome[playerId] = CreateCountTrigger(0, 0, playerId, mapAgridome, mapAny, 1, cmpGreaterEqual, trigName[2]);
+		scr_snprintf(trigName[2], sizeof(trigName[2]), "RebuiltAgridome_P%i", playerId);
+		playerRebuiltAgridome[playerId] = CreateCountTrigger(0, 0, playerId, mapAgridome, mapAny, 1, cmpGreaterEqual, trigName[2]);
+	}
 }
 
 

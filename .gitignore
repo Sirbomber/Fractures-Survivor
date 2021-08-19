@@ -38,3 +38,7 @@
 Debug
 Release
 *.ncb
+AI/CombatGroup.cpp
+AI/CombatGroup.h
+/PatchesOld
+Changes.txt

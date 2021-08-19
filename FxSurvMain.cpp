@@ -13,107 +13,79 @@
 #include <hfl.h>
 #include "functions.h"
 #include "AI\FraxSurvAi.h"
-#include "Patches\ExtLocation.h"
+#include "Patches\Patcher.h"
 #include "Patches\RandomResources.h"
-#include "Patches\HookHelper.h"
-#include "Patches\UnitHookHelper.h"
-#include "Patches\DualTurretUnit.h"
-#include "Patches\BlightHook.h"
-#include "Patches\MiscPatches.h"
+#include "Patches\Patches.h"
 #include "Patches\DIRTRepair.h"
 #include "Patches\Cutscene.h"
-#include "Patches\MessageHook.h"
 
 #include "PlayerEvents\PlayerEvents.h"
 
 // ----------------------------------------------------------------------------
 
-Export char MapName[]			= "fraxsurv.map";
-Export char LevelDesc[]		    = "5P, SRV, 'Fractured Alliance'";
-Export char TechtreeName[]		= "survtech.txt";
+Export char MapName[] = "fraxsurv.map";
+Export char LevelDesc[] = "5P, SRV, 'Fractured Alliance v2.0 TEST'";
+Export char TechtreeName[] = "survtech.txt";
+#ifndef _DEBUG
 Export AIModDesc DescBlock	    = { MultiSpaceRace, 5, 12, 0 };
-
 Export int DescBlockEx[] = { 1, 0, 0, 0, 0, 0, 0, 0 }; // Add one extra player slot for AI
+#else
+Export AIModDesc DescBlock = { Colony, 6, 12, 0 };
+#endif
 
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{		
-		hInstDLL = hinstDLL; // Save the DLL's base address (for cutscene playback)
+		if (fdwReason == DLL_PROCESS_ATTACH) {
+			g_hInst = hinstDLL; // Save the DLL's base address
 
-		if (HFLInit() == HFLCANTINIT
-			|| !SetTurretAnimationHook()
-			|| !RandomRes::SetBeaconHook()
-			|| !SetBlightHook(true)
-			|| !SetMissionEndHook()
-			//|| !SetMessageHook(true)
-			)
-			return FALSE;
+			bool result = (HFLInit() == HFLLOADED);
+			result = result && SetBlightPatch(true);
+			result = result && SetCreateUnitHook(true);
+			result = result && SetStructureDamagePatches(true);
+			result = result && SetMissionEndHook(true, "MEF.AVI", "MEBL.AVI");
+			result = result && SetMissilePatches(true);
+			result = result && RandomRes::SetHiddenBeaconPatch(true);
 
-		// Super speed hack
-		//OP2PatchManager::Patch<unsigned char>((void*)0x49C374, 0xEB, 0x73, false);
+			if (result == false) {
+				return FALSE;
+			}
+		}
+		else if (fdwReason == DLL_PROCESS_DETACH) {
+			// ** TODO this should be in 1.4.0
+			TethysGame::SetMicrobeSpreadSpeed(0);
+		}
+
+		return TRUE;
 	}
-	else if (fdwReason == DLL_PROCESS_DETACH)
-	{
-		LockWindowUpdate(NULL); // Unlock Dans_RULE_UIFrame (locked by PlayAvi)
-
-		SetBlightHook(false);
-		OP2PatchManager::DoUnpatchAll(true);
-
-		HFLCleanup();
-
-		TethysGame::SetMicrobeSpreadSpeed(0);
-	}
-
-	
-
-    return TRUE;
 }
 
 // -----------------------------------------------------------------------
-
-/*
-struct EvacTrans
-{
-	Unit id;
-
-	int numK;		// # of children
-	int numW;		// # of workers
-	int numS;		// # of SOLGRS -- I mean, scientists
-
-	EvacTrans *next,
-			  *prev;
-};
-
-Trigger PlayerCCTriggers[5];
-EvacTrans *head = NULL,
-          *tail = NULL;
-*/
 
 FraxSurvAI fxsAI;
 
 Export int InitProc()
 {
-#ifdef _DEBUG
+	#ifdef _DEBUG
 	((OP2Game*)gameObj)->gameStartInfo.startupFlags.moraleOn = true;
 	((OP2Game*)gameObj)->gameStartInfo.startupFlags.dayAndNightOn = true;
 	((OP2Game*)gameObj)->gameStartInfo.startupFlags.diastersOn = true;
 	((OP2Game*)gameObj)->gameStartInfo.startupFlags.initialVehicles = 12;
 	Player[0].GoEden();
+	Player[0].SetTechLevel(13);
 	Player[0].SetColorNumber(1);
 	Player[1].SetColorNumber(3);
-#endif
+	ExtPlayer[0].SetSatelliteCount(mapEDWARDSatellite, 1);
+	#endif
 
-    // Initialization stuff goes in InitProc.  Mind-blowing.
-    DoSurvSetup();      // Handles morale settings and the playlist
-    SetupInitRes();     // Sets up player's initial resources
-    SetupVictory();     // Creates victory and defeat conditions
-    SetAllLava();       // Set dark gray rock to allow lava to spread onto it
-	SetupDisasters();   // Add a few disasters, just to shake things up (like earthquakes!  get it?  ahahahahaha...)
-
-    DoRandomBases();    // Randomize and place bases
-    SetupWreckage();    // Place wreckage
-
+	// Map/object/disaster/player initialization
+	DoSurvSetup();      // Handles morale settings and the playlist
+	SetupTutorial();     // Creates victory and defeat conditions
+	SetAllLava();       // Set dark gray rock to allow lava to spread onto it
+	ConfigureDisasterCreator();
+	DoRandomBases();    // Randomize and place bases
+	SetupWreckage();    // Place wreckage
 	SetupBlight();      // Trigger to spawn Blight
 
 	// Determine AI player number.
@@ -122,10 +94,10 @@ Export int InitProc()
 	{
 		Player[i].AllyWith(6);
 		Player[6].AllyWith(i);
-	    if (!Player[i].IsHuman() && numAI < 0) 
-	    {
+		if (!Player[i].IsHuman() && numAI < 0)
+		{
 			numAI = i;
-	    }
+		}
 		else
 		{
 			CreatePlayerEvents(i);
@@ -148,12 +120,33 @@ Export int InitProc()
 	Player[numAI].GoPlymouth();
 	fxsAI.SetupAI(numAI);
 
-	SetupMines();       // Place random mines (needs to be done after other things have been placed)
-	SetupDIRTRepair();
-	
+	PlaceOre();
+	SetupDirtRepair();
+
 	// Force RCC effect
 	((OP2Game*)gameObj)->forceRCC = 1;
-	//CreateTimeTrigger(1, 1, 12000, "UnforceRCC");
+
+	// Disable the RCC and set Leisure Studies as unresearchable
+	bool rccDisabled = false,
+		 recDisabled = false;
+	for (int i = 0; i < ((OP2Research*)researchObj)->numTechs; ++i)
+	{
+		if (rccDisabled && recDisabled)
+		{
+			break;
+		}
+		else if (((OP2Research*)researchObj)->techInfos[i]->techID == 9706)
+		{
+			unitInfoArray[mapRobotCommand]->techId = i;
+			rccDisabled = true;
+		}
+		else if (((OP2Research*)researchObj)->techInfos[i]->techID == 3306)
+		{
+			((OP2Research*)researchObj)->techInfos[i]->plyCost = -1;
+			((OP2Research*)researchObj)->techInfos[i]->edenCost = -1;
+			recDisabled = true;
+		}
+	}
 
 	// Infected vehicle stuff
 	CreateTimeTrigger(1, 0, 10 * 4, "FindInfectedTankTargets");
@@ -168,35 +161,35 @@ Export int InitProc()
 
 // ----------------------------------------------------------------------------
 
+// Runs AI logic.  The time trigger that calls this runs every 100 ticks and is set up in FracSurvAi_MainBase.cpp
 Export void UpdateCycle()
 {
 	fxsAI.UpdateCycle();
 }
 
+// Call the custom Blight logic and check if a Scout should reveal a hidden mining beacon.
 Export void AIProc()
 {
     for (int i = 0; i < TethysGame::NoPlayers(); i ++)
 	{
-		BlightHook_InfectionProc(i);
+		BlightInfectionProc(i);
 		RandomRes::LocateBeaconProc(i);
 	}
 }
 
+// Unused, but if someone wants to port this mission into a colony game, this would be required.
 void __cdecl GetSaveRegions(struct BufferDesc &bufDesc)
 {
 	bufDesc.bufferStart = 0;	// Pointer to a buffer that needs to be saved
 	bufDesc.length = 0;			// sizeof(buffer)
 }
 
+// Used when a trigger does not require a callback function (NoResponseToTrigger).
 Export void None()
 {
 }
 
-Export void UnforceRCC()
-{
-	((OP2Game*)gameObj)->forceRCC = 0;
-}
-
+// Reveals all hidden beacons once at least one player has launched the EDWARD Satellite.
 Export void DiscoverAllBeacons()
 {
 	UnitEx curBeacon;
@@ -216,6 +209,7 @@ Export void DiscoverAllBeacons()
 	}
 }
 
+// Sets the "is Eden" bit on any vehicles built by the Eden outpost Vehicle Factories.
 Export void PlymzToEden()
 {
 	Unit Unit1;
@@ -231,6 +225,65 @@ Export void PlymzToEden()
 		{
 			OP2Unit *internalUnit = &(*unitArray)[Unit1.unitID];
 			internalUnit->flags |= UNIT_ISEDEN;
+		}
+	}
+}
+
+// Abandoned Vehicle Factories infected by the Blight will start spawning Lynx every 200~400 marks.
+// These Lynx are hostile to the players and the AI.
+// TO DO: Check original owner's tech progress and possibly spawn other unit/weapon types?
+Export void SpawnInfectedLynx()
+{
+	Unit VF,
+		Lynx;
+	OP2Unit *intVF,
+		*intLynx;
+
+	PlayerBuildingEnum InfectedVFs(6, mapVehicleFactory);
+	while (InfectedVFs.GetNext(VF))
+	{
+		if (VF.IsLive())
+		{
+			intVF = &(*unitArray)[VF.unitID];
+			//int origOwner = intVF->creatorNum;
+			//map_id vehicle, weapon;
+			
+			if (intVF->flags & UNIT_ISEDEN)
+			{
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y), 6, mapLaser, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags |= UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y + 1), 6, mapLaser, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags |= UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y + 2), 6, mapLaser, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags |= UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+			}
+
+			else
+			{
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y), 6, mapMicrowave, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags &= ~UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y + 1), 6, mapMicrowave, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags &= ~UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+
+				TethysGame::CreateUnit(Lynx, mapLynx, LOCATION(VF.Location().x + 2, VF.Location().y + 2), 6, mapMicrowave, 0);
+				intLynx = &(*unitArray)[Lynx.unitID];
+				intLynx->flags &= ~UNIT_ISEDEN;
+				intLynx->flags |= UNIT_EX_INFECTEDVEHICLE;
+			}
+
 		}
 	}
 }

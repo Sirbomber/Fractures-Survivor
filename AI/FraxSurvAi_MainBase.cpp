@@ -23,7 +23,7 @@ void FraxSurvAI::SetupAI(int id)
 	// Get human player difficulty level counts
 	for (int i = 0; i < TethysGame::NoPlayers(); i++)
 	{
-		if (!Player[i].IsHuman())
+		if (Player[i].IsHuman())
 		{
 			switch (Player[i].Difficulty())
 			{
@@ -41,6 +41,26 @@ void FraxSurvAI::SetupAI(int id)
 			}
 		}
 	}
+
+#ifdef _DEBUG
+	numHumansEasy = 0;
+	numHumansNormal = 0;
+	numHumansHard = 5;
+#endif
+
+#ifdef USECOMBATGROUPS
+	// If there are more players on hard than on normal and easy, give the AI increased search space
+	if (numHumansHard >= numHumansNormal + numHumansEasy)
+	{
+		CombatGroup::SetMaxSearchRange(24);
+	}
+	// If all players are on easy, decrease the search space and nerf the AI's ability to micromanage
+	else if (numHumansHard == 0 && numHumansNormal == 0)
+	{
+		CombatGroup::SetMaxSearchRange(10);
+		CombatGroup::EnableHandicap();
+	}
+#endif
 
 	// The AI counts as a player on easy.
 	numHumansEasy++;
@@ -62,27 +82,21 @@ void FraxSurvAI::SetupAI(int id)
 	nextAttackTimeMain = 19000 + TethysGame::GetRand(101);
 
 	// Setup the Eden outpost
-	if (TethysGame::CanHaveDisasters())
-	{
-		PrepareUnitGroupsEden();
-		SetupOutpost1();
-		nextAttackTimeEden = 22000 + TethysGame::GetRand(101);
-	}
+	PrepareUnitGroupsEden();
+	SetupOutpost1();
+	nextAttackTimeEden = 22000 + TethysGame::GetRand(101);
 
 	// Setup the Plymouth outpost
-	if (TethysGame::UsesDayNight())
-	{
-		PrepareUnitGroupsPlymouth();
-		SetupOutpost2();
-		RecordStructuresPlymouth();
-		nextAttackTimePlym = 22400 + TethysGame::GetRand(201);
-	}
+	PrepareUnitGroupsPlymouth();
+	SetupOutpost2();
+	RecordStructuresPlymouth();
+	nextAttackTimePlym = 22400 + TethysGame::GetRand(201);
 
 	// Setup AI monitoring functions
 	trigUpdateCycle = CreateTimeTrigger(1, 0, 100, "UpdateCycle");
 	
 	LastMissileTime[0] = SPACEPORT_DELAY;
-	LastMissileTime[1] = SPACEPORT_DELAY + 1122;	// Slight delay so both missiles don't fire at the same time.
+	LastMissileTime[1] = SPACEPORT_DELAY + 7122;	// Slight delay so both missiles don't fire at the same time.
 
 	odprintf("End SetupAI\n");
 
@@ -90,7 +104,24 @@ void FraxSurvAI::SetupAI(int id)
 
 void FraxSurvAI::UpdateCycle()
 {
-	// Check attack waves
+#ifdef USECOMBATGROUPS
+	// Call combat group update functions
+	std::vector<CombatGroup>::iterator i = allCombatGroups.begin();
+	while (i != allCombatGroups.end())
+	{
+		if (i->IsEmpty())
+		{
+			i = allCombatGroups.erase(i);
+		}
+		else
+		{
+			i->Update();
+			i++;
+		}
+	}
+#endif
+
+	// Check if it's time to launch a new attack wave
 	CheckAttack();
 
 	// Repair monitor
@@ -98,10 +129,7 @@ void FraxSurvAI::UpdateCycle()
 	Main_Repair();
 	#endif
 
-	if (TethysGame::CanHaveDisasters())
-	{
-		Eden_Repair();
-	}
+	Eden_Repair();
 
 	// Check Spaceport/EMP Missile status
 	if (TethysGame::Tick() > SPACEPORT_DELAY)
@@ -125,7 +153,7 @@ void FraxSurvAI::SetupMainBase()
 	odprintf("Begin SetupMainBase\n");
 
 	// Setup the AI's main base, mining beacons, and stuff like that.
-	Unit Unit1,
+	UnitEx Unit1,
 		cSmelter[6],
 		cMine[2],
 		rSmelter[3],
@@ -331,7 +359,24 @@ void FraxSurvAI::SetupMainBase()
 #endif
 
 	// Combat Units
-	TethysGame::CreateUnit(Unit1, mapTiger, LOCATION(2 + 31, 69 - 1), aiNum, mapEMP, 0);
+	map_id vType;
+	if (numHumansNormal + numHumansHard > 0)
+	{
+		vType = mapTiger;
+	}
+	else
+	{
+		vType = mapPanther;
+	}
+	
+#ifdef USECOMBATGROUPS
+	CombatGroup ChokeDefense;
+	ChokeDefense.CreateCombatGroup(aiNum);
+	ChokeDefense.SetDestination(MAP_RECT(x, y, x, y));
+#endif
+	
+
+	TethysGame::CreateUnit(Unit1, vType, LOCATION(2 + 31, 69 - 1), aiNum, mapEMP, 0);
 	Unit1.DoSetLights(1);
 #ifndef NOAIMILUNITS
 	ChokeDefense.TakeUnit(Unit1);
@@ -346,12 +391,12 @@ void FraxSurvAI::SetupMainBase()
 #ifndef NOAIMILUNITS
 	ChokeDefense.TakeUnit(Unit1);
 #endif
-	TethysGame::CreateUnit(Unit1, mapTiger, LOCATION(2 + 31, 70 - 1), aiNum, mapRPG, 0);
+	TethysGame::CreateUnit(Unit1, vType, LOCATION(2 + 31, 70 - 1), aiNum, mapRPG, 0);
 	Unit1.DoSetLights(1);
 #ifndef NOAIMILUNITS
 	ChokeDefense.TakeUnit(Unit1);
 #endif
-	TethysGame::CreateUnit(Unit1, mapTiger, LOCATION(3 + 31, 70 - 1), aiNum, mapRPG, 0);
+	TethysGame::CreateUnit(Unit1, vType, LOCATION(3 + 31, 70 - 1), aiNum, mapRPG, 0);
 	Unit1.DoSetLights(1);
 #ifndef NOAIMILUNITS
 	ChokeDefense.TakeUnit(Unit1);
@@ -388,7 +433,15 @@ void FraxSurvAI::SetupMainBase()
 #endif
 
 	// Guard Posts
-	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(8 + 31, 72 - 1), aiNum, mapESG, 0);
+	if (numHumansNormal + numHumansHard > 0)
+	{
+		vType = mapESG;
+	}
+	else
+	{
+		vType = mapEMP;
+	}
+	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(8 + 31, 72 - 1), aiNum, vType, 0);
 	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(6 + 31, 72 - 1), aiNum, mapRPG, 0);
 	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(4 + 31, 72 - 1), aiNum, mapRPG, 0);
 	TethysGame::CreateUnit(Unit1, mapGuardPost, LOCATION(127 + 31, 4 - 1), aiNum, mapESG, 0);
@@ -529,8 +582,11 @@ void FraxSurvAI::PrepareUnitGroupsMain()
 	ChokeDefense.AddGuardedRect(MAP_RECT(0 + 31, 66 - 1, 10 + 31, 77 - 1));
 	//ChokeDefense.SetDeleteWhenEmpty(1);
 
+	RevengeGroup[0] = CreateFightGroup(aiNum);
+	RevengeGroup[1] = CreateFightGroup(aiNum);
+
 	MainOffense[0] = CreateFightGroup(aiNum);
-	MainOffense[0].SetTargCount(mapLynx, mapMicrowave, (2 * (TethysGame::NoPlayers())));
+	MainOffense[0].SetTargCount(mapLynx, mapMicrowave, 7 + numHumansHard);
 	MainOffense[0].SetRect(MAP_RECT(58 + 31, 38 - 1, 69 + 31, 44 - 1));
 	MainVF[3].RecordVehReinforceGroup(MainOffense[0], 4000);
 
@@ -605,12 +661,15 @@ void FraxSurvAI::PrepareUnitGroupsMain()
 	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(55 + 31, 172 - 1), aiNum, mapMicrowave, 0);
 	Unit1.DoSetLights(1);
 	PatrolGroups[0].TakeUnit(Unit1);
-	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(55 + 31, 173 - 1), aiNum, mapMicrowave, 0);
-	Unit1.DoSetLights(1);
-	PatrolGroups[0].TakeUnit(Unit1);
-	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(55 + 31, 174 - 1), aiNum, mapMicrowave, 0);
-	Unit1.DoSetLights(1);
-	PatrolGroups[0].TakeUnit(Unit1);
+	if (numHumansHard + numHumansHard > 0)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(55 + 31, 173 - 1), aiNum, mapMicrowave, 0);
+		Unit1.DoSetLights(1);
+		PatrolGroups[0].TakeUnit(Unit1);
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(55 + 31, 174 - 1), aiNum, mapMicrowave, 0);
+		Unit1.DoSetLights(1);
+		PatrolGroups[0].TakeUnit(Unit1);
+	}
 
 	PatrolGroups[0].SetPatrolMode(Route1);
 
@@ -663,6 +722,16 @@ void FraxSurvAI::PrepareUnitGroupsMain()
 	TethysGame::CreateUnit(Unit1, mapPanther, LOCATION(52 + 31, 117 - 1), aiNum, mapThorsHammer, 0);
 	Unit1.DoSetLights(1);
 	PatrolGroups[1].TakeUnit(Unit1);
+	if (numHumansHard > 1)
+	{
+		TethysGame::CreateUnit(Unit1, mapPanther, LOCATION(54 + 31, 118 - 1), aiNum, mapAcidCloud, 0);
+		Unit1.DoSetLights(1);
+		PatrolGroups[1].TakeUnit(Unit1);
+		TethysGame::CreateUnit(Unit1, mapPanther, LOCATION(55 + 31, 118 - 1), aiNum, mapAcidCloud, 0);
+		Unit1.DoSetLights(1);
+		PatrolGroups[1].TakeUnit(Unit1);
+	}
+
 	Player[aiNum].GoPlymouth();
 
 	PatrolGroups[1].SetPatrolMode(Route2);
@@ -884,7 +953,7 @@ void FraxSurvAI::LaunchEmpMissile1()
 	if (target.IsLive() && Spaceport[0].IsLive())
 	{
 		Spaceport[0].DoLaunch(target.Location().x * 32, target.Location().y * 32, 1);
-		LastMissileTime[0] = TethysGame::Tick() + 1900 + TethysGame::GetRand(800) - TethysGame::GetRand(200);
+		LastMissileTime[0] = TethysGame::Tick() + 2900 + TethysGame::GetRand(1400);
 		odprintf("LaunchEmpMissile1: Launched.\n");
 	}
 	odprintf("End LaunchEmpMissile1\n");
@@ -931,7 +1000,7 @@ void FraxSurvAI::LaunchEmpMissile2()
 	if (target.IsLive() && Spaceport[1].IsLive())
 	{
 		Spaceport[1].DoLaunch(target.Location().x * 32, target.Location().y * 32, 1);
-		LastMissileTime[1] = TethysGame::Tick() + 1900 + TethysGame::GetRand(800) - TethysGame::GetRand(200);
+		LastMissileTime[1] = TethysGame::Tick() + 2900 + TethysGame::GetRand(1400);
 	}
 	odprintf("End LaunchEmpMissile2\n");
 }
@@ -947,15 +1016,20 @@ void FraxSurvAI::CheckRevenge()
 		odprintf("AI Revenge: Revenge mode activated.\n");
 
 		// Give the AI some final "help"
-		Unit Unit1;
+#ifdef USECOMBATGROUPS
+		CombatGroup revengeGroup;
+		revengeGroup.CreateCombatGroup(aiNum);
+#endif
+
+		UnitEx Unit1;
 		for (int x = 68; x < 81; x++)
 		{
 			TethysGame::CreateUnit(Unit1, mapTiger, LOCATION(x + 31, 0), aiNum, mapESG, 2);
 			Unit1.DoSetLights(1);
-			MainDefense[0].TakeUnit(Unit1);
+			RevengeGroup[0].TakeUnit(Unit1);
 			TethysGame::CreateUnit(Unit1, mapTiger, LOCATION(x + 31, 1), aiNum, mapESG, 2);
 			Unit1.DoSetLights(1);
-			MainDefense[1].TakeUnit(Unit1);
+			RevengeGroup[1].TakeUnit(Unit1);
 		}
 
 		//MainDefense[0].SetDeleteWhenEmpty(1);
@@ -983,9 +1057,19 @@ void FraxSurvAI::CheckRevenge()
 		MainOffense[1].SetAttackType(mapCommandCenter);
 		MainOffense[1].DoAttackEnemy();
 
+		RevengeGroup[0].SetAttackType(mapCommandCenter);
+		RevengeGroup[0].DoAttackEnemy();
+
+		RevengeGroup[1].SetAttackType(mapCommandCenter);
+		RevengeGroup[1].DoAttackEnemy();
+
+#ifdef USECOMBATGROUPS
+		allCombatGroups.push_back(revengeGroup);
+#endif
+
 		// Now, cleanup the AI.
-		trigUpdateCycle.Destroy();
-		odprintf(" >AI Revenge: Update cycle destroyed.\n");
+		//trigUpdateCycle.Destroy();
+		//odprintf(" >AI Revenge: Update cycle destroyed.\n");
 
 		Unit ToRemove;
 

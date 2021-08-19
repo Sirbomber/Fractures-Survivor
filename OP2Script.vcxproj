@@ -19,27 +19,27 @@
     <ProjectGuid>{371F4704-3EB9-48BE-B94E-0C0B8F17AAF9}</ProjectGuid>
     <RootNamespace>OP2Script</RootNamespace>
     <Keyword>AtlProj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release With Debug Info|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
-    <UseOfMfc>false</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
-    <UseOfMfc>false</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>v141</PlatformToolset>
-    <UseOfMfc>false</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -63,25 +63,25 @@
     <_ProjectFileVersion>15.0.28127.55</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
-    <TargetName>mf5_fxs</TargetName>
+    <TargetName>fracturedalliance</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>.\Debug\</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
-    <TargetName>mf5_fxs</TargetName>
+    <TargetName>fracturedalliance</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release With Debug Info|Win32'">
-    <OutDir>.\ReleaseDebugInfo\</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
-    <TargetName>mf5_fxs</TargetName>
+    <TargetName>fracturedalliance</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -91,7 +91,7 @@
     <ClCompile>
       <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\Include;..\HFLInclude;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -104,14 +104,17 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DisableSpecificWarnings>4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>..\Lib\Outpost2DLL.lib;..\Lib\OP2Helper.lib;..\Lib\hfl.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)mf5_fxs.dll</OutputFile>
+      <AdditionalDependencies>..\Lib\Outpost2DLL.lib;..\Lib\OP2Helper.lib;..\Lib\HFL.lib;..\Lib\OP2Disasters.lib;Patches\imported\capstone\capstone.lib;User32.lib;vfw32.lib;gdi32.lib</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <IgnoreSpecificDefaultLibraries>libc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -141,7 +144,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\Include;..\HFLInclude;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -154,14 +157,17 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>..\Lib\Outpost2DLL.lib;..\Lib\OP2Helper.lib;..\Lib\hfl.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)mf5_fxs.dll</OutputFile>
+      <AdditionalDependencies>..\Lib\Outpost2DLL.lib;..\Lib\OP2Helper.lib;..\Lib\hfl.lib;Patches\imported\capstone\capstone.lib;User32.lib;vfw32.lib;gdi32.lib</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <IgnoreSpecificDefaultLibraries>libc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -192,7 +198,7 @@
     <ClCompile>
       <Optimization>MinSpace</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -206,14 +212,17 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>..\lib\op2.lib;..\lib\op2sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)OP2Script.dll</OutputFile>
+      <AdditionalDependencies>..\Lib\Outpost2DLL.lib;..\Lib\OP2Helper.lib;..\Lib\hfl.lib;..\Lib\OP2Disasters.lib;Patches\imported\capstone\capstone.lib;User32.lib;vfw32.lib;gdi32.lib</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <IgnoreSpecificDefaultLibraries>libc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -244,18 +253,21 @@
     <ClCompile Include="AI\FraxSurvAi_Research.cpp" />
     <ClCompile Include="AI\FraxSurvAi_Utils.cpp" />
     <ClCompile Include="FxSurvMain.cpp" />
+    <ClCompile Include="Mission\Disasters.cpp" />
+    <ClCompile Include="Mission\OreSetup.cpp" />
+    <ClCompile Include="Mission\PlayerSetup.cpp" />
     <ClCompile Include="odprintf.cpp" />
-    <ClCompile Include="Patches\BlightHook.cpp" />
+    <ClCompile Include="Patches\AcidTrip.cpp" />
+    <ClCompile Include="Patches\Blight.cpp" />
+    <ClCompile Include="Patches\ChatMessageHook.cpp" />
+    <ClCompile Include="Patches\CreateUnitHook.cpp" />
     <ClCompile Include="Patches\Cutscene.cpp" />
-    <ClCompile Include="Patches\DIRTRepair.cpp" />
-    <ClCompile Include="Patches\DualTurretUnit.cpp" />
+    <ClCompile Include="Patches\DirtRepair.cpp" />
     <ClCompile Include="Patches\ExtLocation.cpp" />
-    <ClCompile Include="Patches\HookHelper.cpp" />
-    <ClCompile Include="Patches\MessageHook.cpp" />
     <ClCompile Include="Patches\MiscPatches.cpp" />
+    <ClCompile Include="Patches\NuclearMissile.cpp" />
     <ClCompile Include="Patches\Patcher.cpp" />
     <ClCompile Include="Patches\RandomResources.cpp" />
-    <ClCompile Include="Patches\UnitHookHelper.cpp" />
     <ClCompile Include="PlayerEvents\PlayerEvents.cpp" />
     <ClCompile Include="SurvSetup.cpp" />
   </ItemGroup>
@@ -263,6 +275,7 @@
     <ClInclude Include="AI\FraxSurvAi.h" />
     <ClInclude Include="AI\FraxSurvWaypoints.h" />
     <ClInclude Include="functions.h" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="odprintf.h" />
     <ClInclude Include="OP2Types\OP2BlightLavaMgr.h" />
     <ClInclude Include="OP2Types\OP2Game.h" />
@@ -282,17 +295,15 @@
     <ClInclude Include="Outpost2App\TApp.h" />
     <ClInclude Include="Outpost2App\TFrame.h" />
     <ClInclude Include="Outpost2App\UIState.h" />
-    <ClInclude Include="Patches\BlightHook.h" />
     <ClInclude Include="Patches\Cutscene.h" />
-    <ClInclude Include="Patches\DIRTRepair.h" />
-    <ClInclude Include="Patches\DualTurretUnit.h" />
+    <ClInclude Include="Patches\DirtRepair.h" />
     <ClInclude Include="Patches\ExtLocation.h" />
-    <ClInclude Include="Patches\HookHelper.h" />
-    <ClInclude Include="Patches\MessageHook.h" />
-    <ClInclude Include="Patches\MiscPatches.h" />
+    <ClInclude Include="Patches\MapObjectVtbls.h" />
     <ClInclude Include="Patches\Patcher.h" />
+    <ClInclude Include="Patches\PatcherUtil.h" />
+    <ClInclude Include="Patches\Patches.h" />
     <ClInclude Include="Patches\RandomResources.h" />
-    <ClInclude Include="Patches\UnitHookHelper.h" />
+    <ClInclude Include="Patches\Util.h" />
     <ClInclude Include="PlayerEvents\PlayerEvents.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,8 +1,11 @@
 #include "FraxSurvAi.h"
 
+const int INITIAL_RESEARCH_DELAY = 140000,
+		  DELAY_BETWEEN_RESEARCHES = 13000;
+
 // Research + assigned scientist list
 int StdTechList[][2] = { {8306,12},		// Enhanced Defensive Fortifications
-						{7206,12},      // Scout-Class Drive Train Refit						
+						{7206,12},      // Scout-Class Drive Train Refit
 						{8302,18},		// Efficiency Engineering (Plymouth)
 						{8203,12},		// High-Powered Explosives
 						{7202,14},		// Hot-Cracking Column Efficiency
@@ -22,6 +25,11 @@ int AdvTechList[][2] = { {7201,17},		// Rare Ore Extraction
 
 void FraxSurvAI::LabStuff()
 {
+	if (TethysGame::Tick() < INITIAL_RESEARCH_DELAY)
+	{
+		return;
+	}
+
 	odprintf("Begin LabStuff\n");
 	// Standard Lab
 	if (!StdLab.IsLive())
@@ -35,7 +43,7 @@ void FraxSurvAI::LabStuff()
 		}
 	}
 
-	else if (TethysGame::Tick() > LastResearchTime + 10000)
+	else if (TethysGame::Tick() > LastResearchTime + DELAY_BETWEEN_RESEARCHES)
 	{
 		if (!StdLab.IsBusy())
 		{
@@ -79,13 +87,13 @@ void FraxSurvAI::LabStuff()
 		// Check if the lab has been rebuilt.
 		UnitEx i;
 		PlayerBuildingEnum GetALab(aiNum, mapAdvancedLab);
-	    if (GetALab.GetNext(i) && i.IsLive())
+		if (GetALab.GetNext(i) && i.IsLive())
 		{
 			AdvLab = i;
 		}
 	}
 
-	else if (TethysGame::Tick() > LastResearchTime + 10000)
+	else if (TethysGame::Tick() > LastResearchTime + DELAY_BETWEEN_RESEARCHES)
 	{
 		if (!AdvLab.IsBusy())
 		{
@@ -120,5 +128,6 @@ void FraxSurvAI::LabStuff()
 			}
 		}
 	}
-odprintf("End LabStuff\n");
+	odprintf("End LabStuff\n");
 }
+

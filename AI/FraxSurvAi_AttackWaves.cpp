@@ -1,5 +1,5 @@
 // This file contains all AI attack wave setup/management logic.
-
+// Each attack wave has a min/max count for each unit type in the group.  Minimum assumes 1 player on easy; maximum assumes 5 players on hard.  The AI always counts as a player on easy.
 #pragma once
 
 #include "FraxSurvAi.h"
@@ -63,7 +63,7 @@ void FraxSurvAI::CheckAttack()
 	}
 
 	// Eden outpost attack check
-	if (TethysGame::CanHaveDisasters() && TethysGame::Tick() > nextAttackTimeEden)
+	if (TethysGame::Tick() > nextAttackTimeEden)
 	{
 		switch (curAttackWaveEden)
 		{
@@ -107,7 +107,7 @@ void FraxSurvAI::CheckAttack()
 	}
 
 	// Plymouth outpost attack check
-	if (TethysGame::UsesDayNight() && TethysGame::Tick() > nextAttackTimePlym)
+	if (TethysGame::Tick() > nextAttackTimePlym)
 	{
 		switch (curAttackWavePlym)
 		{
@@ -147,9 +147,12 @@ void FraxSurvAI::CheckAttack()
 		}
 	}
 
+#ifndef USECOMBATGROUPS
 	AttackersAttacked();
 	PG1_Attacked();
 	PG2_Attacked();
+#endif
+	
 }
 
 // ----------------------------------------------------------------------------
@@ -172,8 +175,8 @@ void FraxSurvAI::Main_AttackTeaser()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((3 * numHumansEasy) + (4 * numHumansNormal) + (4 * numHumansHard)));
-		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam,((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((3 * numHumansEasy) + (4 * numHumansNormal) + (4 * numHumansHard)));	// Min: 6 Max: 23
+		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam,((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));	// Min: 4 Max: 17
 	}
 
     if (MainVF[3].IsInitialized())
@@ -203,8 +206,8 @@ void FraxSurvAI::Main_Attack1()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((3 * numHumansEasy) + (4 * numHumansNormal) + (4 * numHumansHard) + 3));
-		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam,((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 2));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((3 * numHumansEasy) + (4 * numHumansNormal) + (4 * numHumansHard) + 3));	// Min: 9 Max: 26
+		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam,((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 2));	// Min: 6 Max: 19
 	}
 
     if (MainVF[3].IsInitialized())
@@ -234,9 +237,9 @@ void FraxSurvAI::Main_Attack2()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((3 * numHumansEasy) + (4 * numHumansNormal) + (4 * numHumansHard)) + 3);
-		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam,((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)) + 2);
-		MainOffense[0].SetTargCount(mapLynx, mapRPG, (TethysGame::NoPlayers() + 2));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((4 * numHumansEasy) + (3 * numHumansNormal) + (2 * numHumansHard)) + 3);	// Min: 11 Max: 17
+		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam, (int)((2 * numHumansEasy) + (3 * numHumansNormal) + (1.5 * numHumansHard)) + 2);	// Min: 6 Max: 11
+		MainOffense[0].SetTargCount(mapLynx, mapRPG, (int)((0 * numHumansEasy) + (1.5 * numHumansNormal) + (3.5 * numHumansHard)));			// Min: 0 Max: 17
 	}
 
     if (MainVF[3].IsInitialized())
@@ -266,9 +269,9 @@ void FraxSurvAI::Main_Attack3()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 2));
-		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam, (TethysGame::NoPlayers()+3));
-		MainOffense[0].SetTargCount(mapLynx, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, ((2 * numHumansEasy) + (2 * numHumansNormal) + (2 * numHumansHard) + 2));	// Min: 6 Max: 12
+		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam, ((1 * numHumansNormal) + (1 * numHumansHard)));								// Min: 0 Max: 5
+		MainOffense[0].SetTargCount(mapLynx, mapRPG, (int)((1 * numHumansEasy) + (2.5 * numHumansNormal) + (3.5 * numHumansHard) + 1));		// Min: 3 Max: 19
 	}
 
     if (MainVF[3].IsInitialized())
@@ -298,10 +301,10 @@ void FraxSurvAI::Main_Attack4()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, (2 * (TethysGame::NoPlayers()+1)));
-		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam, 0);
-		MainOffense[0].SetTargCount(mapLynx, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)) + 2);
-		MainOffense[0].SetTargCount(mapLynx, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, (2 * (TethysGame::NoPlayers()+1)));									// Min: 6 Max: 14
+		MainOffense[0].SetTargCount(mapLynx, mapStickyfoam, 0);																	// Disabled
+		MainOffense[0].SetTargCount(mapLynx, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)) + 2);	// Min: 6 Max: 19
+		MainOffense[0].SetTargCount(mapLynx, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
 	}
 
     if (MainVF[3].IsInitialized())
@@ -335,10 +338,10 @@ void FraxSurvAI::Main_Attack5()
 		MainOffense[0].SetTargCount(mapLynx, mapRPG, 0);
 		MainOffense[0].SetTargCount(mapLynx, mapEMP, 0);
 
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (3 * (TethysGame::NoPlayers()+1)));
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)) + 2);
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[0].SetTargCount(mapPanther, mapESG, 2);
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (3 * (TethysGame::NoPlayers()-1)));											// Min: 3 Max: 15
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, (int)((1.5 * numHumansEasy) + (2.25 * numHumansNormal) + (3.5 * numHumansHard)) + 2);	// Min: 5 Max: 20
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, (int)((1.25 * numHumansEasy) + (2.25 * numHumansNormal) + (3.5 * numHumansHard)));		// Min: 2 Max: 18
+		MainOffense[0].SetTargCount(mapPanther, mapESG, (int)((0 * numHumansEasy) + (1.75 * numHumansNormal) + (2.25 * numHumansHard)));			// Min: 0 Max: 11
 	}
 
     if (MainVF[3].IsInitialized())
@@ -373,10 +376,10 @@ void FraxSurvAI::Main_Attack6()
 		MainOffense[0].SetRect(MAP_RECT(84+31, 15-1, 90+31, 28-1)); 
 		
 		// Start building the next attack group.
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (TethysGame::NoPlayers()+2));
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, ((3 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard)) - 3);
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[0].SetTargCount(mapPanther, mapESG, (TethysGame::NoPlayers()+2));
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (TethysGame::NoPlayers()+2));											// Min: 4 Max: 8
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, ((3 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard)) - 3);	// Min: 3 Max: 20
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
+		MainOffense[0].SetTargCount(mapPanther, mapESG, (TethysGame::NoPlayers()+2));												// Min: 4 Max: 8
 	}
 
 	if (MainOffense[1].IsInitialized())
@@ -423,10 +426,10 @@ void FraxSurvAI::Main_Attack7()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, TethysGame::NoPlayers()-1);
-		MainOffense[0].SetTargCount(mapLynx, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[0].SetTargCount(mapLynx, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[0].SetTargCount(mapLynx, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard)));
+		MainOffense[0].SetTargCount(mapLynx, mapMicrowave, TethysGame::NoPlayers()-1);											// Min: 1 Max: 5
+		MainOffense[0].SetTargCount(mapLynx, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
+		MainOffense[0].SetTargCount(mapLynx, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
+		MainOffense[0].SetTargCount(mapLynx, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard)));					// Min: 2 Max: 11
 	}
 
     if (MainVF[3].IsInitialized())
@@ -437,10 +440,10 @@ void FraxSurvAI::Main_Attack7()
 
 	if (MainOffense[1].IsInitialized())
 	{
-	    MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers()-1);
-		MainOffense[1].SetTargCount(mapPanther, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 2));
-		MainOffense[1].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 1));
-		MainOffense[1].SetTargCount(mapPanther, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard)));
+	    MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers()-1);											// Min: 1 Max: 5
+		MainOffense[1].SetTargCount(mapPanther, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 2));	// Min: 6 Max: 19
+		MainOffense[1].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) + 1));	// Min: 5 Max: 18
+		MainOffense[1].SetTargCount(mapPanther, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard)));					// Min: 2 Max: 11
 	}
 
     if (MainVF[4].IsInitialized())
@@ -475,7 +478,7 @@ void FraxSurvAI::Main_Attack8()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapSupernova, ((2 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard)));
+		MainOffense[0].SetTargCount(mapLynx, mapSupernova, ((2 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard)));	// Min: 4 Max: 22
 	}
 
     if (MainVF[3].IsInitialized())
@@ -486,10 +489,10 @@ void FraxSurvAI::Main_Attack8()
 
 	if (MainOffense[1].IsInitialized())
 	{
-	    MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers()-1);
-		MainOffense[1].SetTargCount(mapPanther, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[1].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));
-		MainOffense[1].SetTargCount(mapPanther, mapESG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) - 2));
+	    MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers()-1);											// Min: 1 Max: 5
+		MainOffense[1].SetTargCount(mapPanther, mapRPG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
+		MainOffense[1].SetTargCount(mapPanther, mapEMP, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard)));		// Min: 4 Max: 17
+		MainOffense[1].SetTargCount(mapPanther, mapESG, ((2 * numHumansEasy) + (2 * numHumansNormal) + (3 * numHumansHard) - 2));	// Min: 2 Max: 15
 	}
 
     if (MainVF[4].IsInitialized())
@@ -525,7 +528,7 @@ void FraxSurvAI::Main_Attack9()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapSupernova, ((2 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard) + 6));
+		MainOffense[0].SetTargCount(mapLynx, mapSupernova, ((2 * numHumansEasy) + (3 * numHumansNormal) + (4 * numHumansHard) + 6));	// Min: 10 Max: 28
 	}
 
     if (MainVF[3].IsInitialized())
@@ -536,10 +539,10 @@ void FraxSurvAI::Main_Attack9()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() - 1);
-		MainOffense[1].SetTargCount(mapPanther, mapRPG, (2 * (TethysGame::NoPlayers() + 1)) - 1);
-		MainOffense[1].SetTargCount(mapPanther, mapEMP, (2 * TethysGame::NoPlayers()) - 1);
-	    MainOffense[1].SetTargCount(mapPanther, mapESG, (2 * (TethysGame::NoPlayers())) - 1);
+		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() - 1);				// Min: 1 Max: 5
+		MainOffense[1].SetTargCount(mapPanther, mapRPG, (2 * (TethysGame::NoPlayers() + 1)) - 1);		// Min: 5 Max: 13
+		MainOffense[1].SetTargCount(mapPanther, mapEMP, (2 * TethysGame::NoPlayers()) - 1);				// Min: 3 Max: 9
+	    MainOffense[1].SetTargCount(mapPanther, mapESG, (2 * (TethysGame::NoPlayers())) - 1);			// Min: 3 Max: 9
 	}
 
     if (MainVF[4].IsInitialized())
@@ -574,11 +577,11 @@ void FraxSurvAI::Main_Attack10()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 0);
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (TethysGame::NoPlayers() / 2 + 1) - 1);
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));
-		MainOffense[0].SetTargCount(mapPanther, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));
+		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 0);															// Disabled
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, (TethysGame::NoPlayers() / 2 + 1) - 1);					// Min: 1 Max: 3
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));	// Min: 3 Max: 12
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));	// Min: 3 Max: 12
+		MainOffense[0].SetTargCount(mapPanther, mapESG, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 1));	// Min: 3 Max: 12
 	}
 
     if (MainVF[3].IsInitialized())
@@ -589,14 +592,14 @@ void FraxSurvAI::Main_Attack10()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, 0);
-		MainOffense[1].SetTargCount(mapPanther, mapRPG, 0);
-	    MainOffense[1].SetTargCount(mapPanther, mapEMP, 0);
-		MainOffense[1].SetTargCount(mapPanther, mapESG, 0);
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 1);
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, TethysGame::NoPlayers() + 3);
-	    MainOffense[1].SetTargCount(mapTiger, mapEMP, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 3));
-		MainOffense[1].SetTargCount(mapTiger, mapESG, TethysGame::NoPlayers() + 3);
+		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, 0);													// Disabled
+		MainOffense[1].SetTargCount(mapPanther, mapRPG, 0);															// Disabled
+	    MainOffense[1].SetTargCount(mapPanther, mapEMP, 0);															// Disabled
+		MainOffense[1].SetTargCount(mapPanther, mapESG, 0);															// Disabled
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 1);							// Min: 3 Max: 7
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, TethysGame::NoPlayers() + 3);									// Min: 5 Max: 9
+	    MainOffense[1].SetTargCount(mapTiger, mapEMP, (numHumansEasy + numHumansNormal + (2 * numHumansHard) + 3));	// Min: 5 Max: 14
+		MainOffense[1].SetTargCount(mapTiger, mapESG, TethysGame::NoPlayers() + 3);									// Min: 5 Max: 9
 	}
 
     if (MainVF[4].IsInitialized())
@@ -631,10 +634,10 @@ void FraxSurvAI::Main_Attack11()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() + 3);
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, 2 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, 2 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()-1) );
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() + 3);		// Min: 5 Max: 9
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, 2 * TethysGame::NoPlayers() );			// Min: 4 Max: 12
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, 2 * TethysGame::NoPlayers() );			// Min: 4 Max: 12
+		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()-1) );		// Min: 2 Max: 10
 	}
 
     if (MainVF[3].IsInitialized())
@@ -645,10 +648,10 @@ void FraxSurvAI::Main_Attack11()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 1);
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, 2 * (TethysGame::NoPlayers() + 1));
-		MainOffense[1].SetTargCount(mapTiger, mapEMP, 2 * (TethysGame::NoPlayers() + 1));
-		MainOffense[1].SetTargCount(mapTiger, mapESG, 2 * TethysGame::NoPlayers());
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 1);		// Min: 3 Max: 7
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, 2 * (TethysGame::NoPlayers() + 1));		// Min: 6 Max: 14
+		MainOffense[1].SetTargCount(mapTiger, mapEMP, 2 * (TethysGame::NoPlayers() + 1));		// Min: 6 Max: 14
+		MainOffense[1].SetTargCount(mapTiger, mapESG, 2 * TethysGame::NoPlayers());				// Min: 4 Max: 12
 	}
 
     if (MainVF[4].IsInitialized())
@@ -683,10 +686,10 @@ void FraxSurvAI::Main_Attack12()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() + 4);
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, 3 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, 3 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()) );
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, TethysGame::NoPlayers() + 4);		// Min: 6 Max: 16
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, 3 * TethysGame::NoPlayers() );			// Min: 6 Max: 18
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, 3 * TethysGame::NoPlayers() );			// Min: 6 Max: 18
+		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()) );		// Min: 4 Max: 12
 	}
 
     if (MainVF[3].IsInitialized())
@@ -697,10 +700,10 @@ void FraxSurvAI::Main_Attack12()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 2);
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, 2 * (TethysGame::NoPlayers() + 2));
-		MainOffense[1].SetTargCount(mapTiger, mapEMP, 2 * (TethysGame::NoPlayers() + 2));
-		MainOffense[1].SetTargCount(mapTiger, mapESG, 3 * TethysGame::NoPlayers());
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 2);		// Min: 4 Max: 14
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, 2 * (TethysGame::NoPlayers() + 2));		// Min: 8 Max: 16
+		MainOffense[1].SetTargCount(mapTiger, mapEMP, 2 * (TethysGame::NoPlayers() + 2));		// Min: 8 Max: 16
+		MainOffense[1].SetTargCount(mapTiger, mapESG, 3 * TethysGame::NoPlayers());				// Min: 6 Max: 18
 	}
 
     if (MainVF[4].IsInitialized())
@@ -736,10 +739,10 @@ void FraxSurvAI::Main_Attack13()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, 2 * (TethysGame::NoPlayers()+2) );
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, 3 * (TethysGame::NoPlayers()+1) );
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, 3 * (TethysGame::NoPlayers()+1) );
-		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()+1) );
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, 2 * (TethysGame::NoPlayers()+2) );	// Min: 8 Max: 16
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, 3 * (TethysGame::NoPlayers()+1) );			// Min: 9 Max: 21
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, 3 * (TethysGame::NoPlayers()+1) );			// Min: 9 Max: 21
+		MainOffense[0].SetTargCount(mapPanther, mapESG, 2 * (TethysGame::NoPlayers()+1) );			// Min: 6 Max: 14
 	}
 
     if (MainVF[3].IsInitialized())
@@ -750,10 +753,10 @@ void FraxSurvAI::Main_Attack13()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 2);
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, 3 * (TethysGame::NoPlayers() + 2));
-		MainOffense[1].SetTargCount(mapTiger, mapEMP, 3 * (TethysGame::NoPlayers() + 2));
-		MainOffense[1].SetTargCount(mapTiger, mapESG, 3 * TethysGame::NoPlayers());
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, TethysGame::NoPlayers() + 2);		// Min: 4 Max: 14
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, 3 * (TethysGame::NoPlayers() + 2));		// Min: 12 Max: 24
+		MainOffense[1].SetTargCount(mapTiger, mapEMP, 3 * (TethysGame::NoPlayers() + 2));		// Min: 12 Max: 24
+		MainOffense[1].SetTargCount(mapTiger, mapESG, 3 * TethysGame::NoPlayers());				// Min: 6 Max: 18
 	}
 
     if (MainVF[4].IsInitialized())
@@ -789,11 +792,11 @@ void FraxSurvAI::Main_Attack14()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 16);
-		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, 0);
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, 5 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, 5 * TethysGame::NoPlayers() );
-	    MainOffense[0].SetTargCount(mapPanther, mapESG, 3 * TethysGame::NoPlayers() );
+		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 16);								// Constant 16
+		MainOffense[0].SetTargCount(mapPanther, mapMicrowave, 0);							// Disabled
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, 5 * TethysGame::NoPlayers() );		// Min: 10 Max: 30
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, 5 * TethysGame::NoPlayers() );		// Min: 10 Max: 30
+	    MainOffense[0].SetTargCount(mapPanther, mapESG, 3 * TethysGame::NoPlayers() );		// Min: 6 Max: 18
 	}
 
     if (MainVF[3].IsInitialized())
@@ -804,14 +807,14 @@ void FraxSurvAI::Main_Attack14()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, 0);
-		MainOffense[1].SetTargCount(mapPanther, mapRPG, 0);
-	    MainOffense[1].SetTargCount(mapPanther, mapEMP, 0);
-		MainOffense[1].SetTargCount(mapPanther, mapESG, 0);
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, 3 * TethysGame::NoPlayers() );
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, 4 * TethysGame::NoPlayers() - 1);
-	    MainOffense[1].SetTargCount(mapTiger, mapEMP, 4 * TethysGame::NoPlayers() - 1);
-		MainOffense[1].SetTargCount(mapTiger, mapESG, 4 * TethysGame::NoPlayers() - 1);
+		MainOffense[1].SetTargCount(mapPanther, mapMicrowave, 0);							// Disabled
+		MainOffense[1].SetTargCount(mapPanther, mapRPG, 0);									// Disabled
+	    MainOffense[1].SetTargCount(mapPanther, mapEMP, 0);									// Disabled
+		MainOffense[1].SetTargCount(mapPanther, mapESG, 0);									// Disabled
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, 3 * TethysGame::NoPlayers() );	// Min: 6 Max: 18
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, 4 * TethysGame::NoPlayers() - 1);		// Min: 4 Max: 20
+	    MainOffense[1].SetTargCount(mapTiger, mapEMP, 4 * TethysGame::NoPlayers() - 1);		// Min: 4 Max: 20
+		MainOffense[1].SetTargCount(mapTiger, mapESG, 4 * TethysGame::NoPlayers() - 1);		// Min: 4 Max: 20
 	}
 
     if (MainVF[4].IsInitialized())
@@ -848,10 +851,10 @@ void FraxSurvAI::Main_AttackLoop()
     // Start building the next attack group.
 	if (MainOffense[0].IsInitialized())
 	{
-		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 0);
-		MainOffense[0].SetTargCount(mapPanther, mapRPG, 5 * TethysGame::NoPlayers() );
-		MainOffense[0].SetTargCount(mapPanther, mapEMP, 5 * TethysGame::NoPlayers() );
-	    MainOffense[0].SetTargCount(mapPanther, mapESG, 4 * TethysGame::NoPlayers() );
+		MainOffense[0].SetTargCount(mapLynx, mapSupernova, 0);								// Disabled
+		MainOffense[0].SetTargCount(mapPanther, mapRPG, 5 * TethysGame::NoPlayers() );		// Min: 10 Max: 30
+		MainOffense[0].SetTargCount(mapPanther, mapEMP, 5 * TethysGame::NoPlayers() );		// Min: 10 Max: 30
+	    MainOffense[0].SetTargCount(mapPanther, mapESG, 4 * TethysGame::NoPlayers() );		// Min: 8 Max: 24
 	}
 
     if (MainVF[3].IsInitialized())
@@ -862,10 +865,10 @@ void FraxSurvAI::Main_AttackLoop()
 
 	if (MainOffense[1].IsInitialized())
 	{
-		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, 3 * TethysGame::NoPlayers() );
-		MainOffense[1].SetTargCount(mapTiger, mapRPG, 4 * TethysGame::NoPlayers() + 1);
-	    MainOffense[1].SetTargCount(mapTiger, mapEMP, 4 * TethysGame::NoPlayers() + 1);
-		MainOffense[1].SetTargCount(mapTiger, mapESG, 4 * TethysGame::NoPlayers() + 1);
+		MainOffense[1].SetTargCount(mapTiger, mapMicrowave, 3 * TethysGame::NoPlayers() );	// Min: 6 Max: 18
+		MainOffense[1].SetTargCount(mapTiger, mapRPG, 4 * TethysGame::NoPlayers() + 1);		// Min: 9 Max: 25
+	    MainOffense[1].SetTargCount(mapTiger, mapEMP, 4 * TethysGame::NoPlayers() + 1);		// Min: 9 Max: 25
+		MainOffense[1].SetTargCount(mapTiger, mapESG, 4 * TethysGame::NoPlayers() + 1);		// Min: 9 Max: 25
 	}
 
     if (MainVF[4].IsInitialized())

@@ -51,6 +51,25 @@ void FraxSurvAI::SetupOutpost2()
 	Unit1.DoSetLights(1);
 	PlymouthCommon[1].TakeUnit(Unit1);
 
+	for (int mics = 0; mics < 6 + numHumansEasy + (2 * numHumansHard) + (3 * numHumansHard); mics++)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(108 + 31, 150 - 1 + mics), aiNum, mapMicrowave, 0);
+		Unit1.DoSetLights(1);
+		PlymouthDefense.TakeUnit(Unit1);
+	}
+	for (int foams = 0; foams < 3 + numHumansNormal + numHumansHard; foams++)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(109 + 31, 150 - 1 + foams), aiNum, mapStickyfoam, 0);
+		Unit1.DoSetLights(1);
+		PlymouthDefense.TakeUnit(Unit1);
+	}
+	for (int emps = 0; emps < numHumansHard; emps++)
+	{
+		TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(110 + 31, 150 - 1 + emps), aiNum, mapEMP, 0);
+		Unit1.DoSetLights(1);
+		PlymouthDefense.TakeUnit(Unit1);
+	}
+	/*
 	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(108 + 31, 150 - 1), aiNum, mapMicrowave, 0);
 	Unit1.DoSetLights(1);
 	PlymouthDefense.TakeUnit(Unit1);
@@ -111,6 +130,7 @@ void FraxSurvAI::SetupOutpost2()
 	TethysGame::CreateUnit(Unit1, mapLynx, LOCATION(114 + 31, 153 - 1), aiNum, mapEMP, 0);
 	Unit1.DoSetLights(1);
 	PlymouthDefense.TakeUnit(Unit1);
+	*/
 
 	// Mining groups
 	PlymouthCommon[0].Setup(CM, CS1, MAP_RECT(118 + 31, 150 - 1, 123 + 31, 155 - 1));
@@ -152,9 +172,9 @@ void FraxSurvAI::PrepareUnitGroupsPlymouth()
 	PlymouthVF[0].RecordVehReinforceGroup(PlymouthEtc, 3000);
 
 	PlymouthDefense = CreateFightGroup(aiNum);
-	PlymouthDefense.SetTargCount(mapLynx, mapMicrowave, 12);
-	PlymouthDefense.SetTargCount(mapLynx, mapStickyfoam, 4);
-	PlymouthDefense.SetTargCount(mapLynx, mapEMP, 4);
+	PlymouthDefense.SetTargCount(mapLynx, mapMicrowave, 6 + numHumansEasy + (2 * numHumansHard) + (3 * numHumansHard));
+	PlymouthDefense.SetTargCount(mapLynx, mapStickyfoam, 3 + numHumansNormal + numHumansHard);
+	PlymouthDefense.SetTargCount(mapLynx, mapEMP, numHumansHard);
 	PlymouthDefense.SetRect(MAP_RECT(107 + 31, 148 - 1, 115 + 31, 157 - 1));
 	PlymouthDefense.AddGuardedRect(MAP_RECT(109 + 31, 130 - 1, 128 + 31, 142 - 1));
 	PlymouthDefense.AddGuardedRect(MAP_RECT(103 + 31, 145 - 1, 128 + 31, 157 - 1));
@@ -162,7 +182,7 @@ void FraxSurvAI::PrepareUnitGroupsPlymouth()
 
 	PlymouthOffense = CreateFightGroup(aiNum);
 	PlymouthOffense.SetRect(MAP_RECT(111 + 31, 158 - 1, 128 + 31, 163 - 1));
-	PlymouthOffense.SetTargCount(mapLynx, mapMicrowave, (2 * (TethysGame::NoPlayers())));
+	PlymouthOffense.SetTargCount(mapLynx, mapMicrowave, (int)(3 + (numHumansEasy) + (numHumansNormal * 1.5) + (numHumansHard * 2)));	// Min: 9 Max: 14
 	PlymouthVF[1].RecordVehReinforceGroup(PlymouthOffense, 8000);
 
 	/*

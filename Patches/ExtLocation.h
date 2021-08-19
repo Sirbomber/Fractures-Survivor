@@ -18,20 +18,20 @@
 struct LocationEx : LOCATION
 {
 public:
-	LocationEx(int tileX, int tileY);
-	LocationEx(LOCATION location);
-	LocationEx();
-	LOCATION ToPixels();
-	LOCATION FromPixels();
-	LOCATION Wrapped();
-	void Wrap();
-	LOCATION WrappedXY();
-	void WrapXY();
-	LOCATION MapOffsetted();
-	void MapOffset();
-	LOCATION Clipped();
-	LOCATION Added(const LOCATION &vector);
-	LOCATION Normalized();
+  LocationEx(int tileX, int tileY);
+  LocationEx(LOCATION location);
+  LocationEx();
+  LOCATION ToPixels();
+  LOCATION FromPixels();
+  LOCATION Wrapped();
+  void Wrap();
+  LOCATION WrappedXY();
+  void WrapXY();
+  LOCATION MapOffsetted();
+  void MapOffset();
+  LOCATION Clipped();
+  LOCATION Added(const LOCATION &vector);
+  LOCATION Normalized();
 };
 
 
@@ -39,9 +39,9 @@ public:
 struct MapLocation : LocationEx
 {
 public:
-	MapLocation(int tileX, int tileY);
-	MapLocation(LOCATION location);
-	MapLocation();
+  MapLocation(int tileX, int tileY);
+  MapLocation(LOCATION location);
+  MapLocation();
 };
 
 
